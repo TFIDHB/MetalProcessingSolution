@@ -6,6 +6,6 @@
         public string Title { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         public double PriceFrom { get; set; }
-        public string ImageUrl { get; set; } = string.Empty;
+        public List<MetalServiceImageResponseDto> Images { get; set; } = [];
     }
 }

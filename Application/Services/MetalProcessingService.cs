@@ -8,58 +8,10 @@ namespace Application.Services
 {
     public class MetalProcessingService(IUnitOfWork unitOfWork, IMapper mapper, IFileStorageService storageService) : IMetalProcessingService
     {
-        public async Task<IEnumerable<MetalServiceResponseDto>> GetServicesAsync(CancellationToken cancellationToken)
+        public async Task<IEnumerable<UnliquidProductResponseDto>> GetUnliquidProductsAsync(CancellationToken cancellationToken)
         {
-            var services = await unitOfWork.MetalServices.GetAllAsync(cancellationToken);
-            return mapper.Map<IEnumerable<MetalServiceResponseDto>>(services);
-        }
-
-        public async Task<int> CreateServiceAsync(MetalServiceDto dto, CancellationToken cancellationToken)
-        {
-            if (string.IsNullOrWhiteSpace(dto.Title) || dto.PriceFrom <= 0)
-                throw new AppValidationException("Название услуги обязательно, а цена должна быть больше нуля.");
-
-            var service = mapper.Map<MetalService>(dto);
-
-            if (dto.ImageFile != null)
-            {
-                service.ImageUrl = await storageService.SaveFileAsync(dto.ImageFile, "services", cancellationToken);
-            }
-
-            await unitOfWork.MetalServices.AddAsync(service, cancellationToken);
-            await unitOfWork.SaveChangesAsync(cancellationToken);
-            return service.Id;
-        }
-
-        public async Task UpdateServiceAsync(int id, MetalServiceDto dto, CancellationToken cancellationToken)
-        {
-            var service = await unitOfWork.MetalServices.GetByIdAsync(id, cancellationToken);
-            if (service == null) throw new NotFoundException("Услуга", id);
-
-            mapper.Map(dto, service);
-
-            if (dto.ImageFile != null)
-            {
-                storageService.DeleteFile(service.ImageUrl);
-                service.ImageUrl = await storageService.SaveFileAsync(dto.ImageFile, "services", cancellationToken);
-            }
-
-            unitOfWork.MetalServices.Update(service);
-            await unitOfWork.SaveChangesAsync(cancellationToken);
-        }
-
-        public async Task DeleteServiceAsync(int id, CancellationToken cancellationToken)
-        {
-            var service = await unitOfWork.MetalServices.GetByIdAsync(id, cancellationToken);
-            if (service == null) throw new NotFoundException("Услуга", id);
-
-            storageService.DeleteFile(service.ImageUrl);
-            unitOfWork.MetalServices.Delete(service);
-            await unitOfWork.SaveChangesAsync(cancellationToken);
-        }
-        public async Task<IEnumerable<UnliquidProduct>> GetUnliquidProductsAsync(CancellationToken cancellationToken)
-        {
-            return await unitOfWork.UnliquidProducts.GetAllAsync(cancellationToken);
+            var products = await unitOfWork.UnliquidProducts.GetAllAsync(cancellationToken);
+            return mapper.Map<IEnumerable<UnliquidProductResponseDto>>(products);
         }
 
         public async Task<int> CreateUnliquidAsync(UnliquidProductDto dto, CancellationToken cancellationToken)
@@ -69,9 +21,13 @@ namespace Application.Services
 
             var product = mapper.Map<UnliquidProduct>(dto);
 
-            if (dto.ImageFile != null)
+            if (dto.NewImages != null)
             {
-                product.ImageUrl = await storageService.SaveFileAsync(dto.ImageFile, "products", cancellationToken);
+                foreach (var file in dto.NewImages)
+                {
+                    var url = await storageService.SaveFileAsync(file, "products", cancellationToken);
+                    product.Images.Add(new UnliquidProductImage { ImageUrl = url });
+                }
             }
 
             await unitOfWork.UnliquidProducts.AddAsync(product, cancellationToken);
@@ -86,10 +42,23 @@ namespace Application.Services
 
             mapper.Map(dto, product);
 
-            if (dto.ImageFile != null)
+            if (dto.DeleteImageIds != null && dto.DeleteImageIds.Count > 0)
             {
-                storageService.DeleteFile(product.ImageUrl);
-                product.ImageUrl = await storageService.SaveFileAsync(dto.ImageFile, "products", cancellationToken);
+                var imagesToRemove = product.Images.Where(i => dto.DeleteImageIds.Contains(i.Id)).ToList();
+                foreach (var img in imagesToRemove)
+                {
+                    storageService.DeleteFile(img.ImageUrl);
+                    product.Images.Remove(img);
+                }
+            }
+
+            if (dto.NewImages != null)
+            {
+                foreach (var file in dto.NewImages)
+                {
+                    var url = await storageService.SaveFileAsync(file, "products", cancellationToken);
+                    product.Images.Add(new UnliquidProductImage { ImageUrl = url });
+                }
             }
 
             unitOfWork.UnliquidProducts.Update(product);
@@ -101,8 +70,83 @@ namespace Application.Services
             var product = await unitOfWork.UnliquidProducts.GetByIdAsync(id, cancellationToken);
             if (product == null) throw new NotFoundException("Неликвидный товар", id);
 
-            storageService.DeleteFile(product.ImageUrl);
+            foreach (var img in product.Images)
+            {
+                storageService.DeleteFile(img.ImageUrl);
+            }
+
             unitOfWork.UnliquidProducts.Delete(product);
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+        }
+
+        public async Task<IEnumerable<MetalServiceResponseDto>> GetServicesAsync(CancellationToken cancellationToken)
+        {
+            var services = await unitOfWork.MetalServices.GetAllAsync(cancellationToken);
+            return mapper.Map<IEnumerable<MetalServiceResponseDto>>(services);
+        }
+
+        public async Task<int> CreateServiceAsync(MetalServiceDto dto, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(dto.Title) || dto.PriceFrom <= 0)
+                throw new AppValidationException("Название услуги обязательно, а цена должна быть больше нуля.");
+
+            var service = mapper.Map<MetalService>(dto);
+
+            if (dto.NewImages != null)
+            {
+                foreach (var file in dto.NewImages)
+                {
+                    var url = await storageService.SaveFileAsync(file, "services", cancellationToken);
+                    service.Images.Add(new MetalServiceImage { ImageUrl = url });
+                }
+            }
+
+            await unitOfWork.MetalServices.AddAsync(service, cancellationToken);
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+            return service.Id;
+        }
+
+        public async Task UpdateServiceAsync(int id, MetalServiceDto dto, CancellationToken cancellationToken)
+        {
+            var service = await unitOfWork.MetalServices.GetByIdAsync(id, cancellationToken);
+            if (service == null) throw new NotFoundException("Услуга", id);
+
+            mapper.Map(dto, service);
+
+            if (dto.DeleteImageIds != null && dto.DeleteImageIds.Count > 0)
+            {
+                var imagesToRemove = service.Images.Where(i => dto.DeleteImageIds.Contains(i.Id)).ToList();
+                foreach (var img in imagesToRemove)
+                {
+                    storageService.DeleteFile(img.ImageUrl);
+                    service.Images.Remove(img);
+                }
+            }
+
+            if (dto.NewImages != null)
+            {
+                foreach (var file in dto.NewImages)
+                {
+                    var url = await storageService.SaveFileAsync(file, "services", cancellationToken);
+                    service.Images.Add(new MetalServiceImage { ImageUrl = url });
+                }
+            }
+
+            unitOfWork.MetalServices.Update(service);
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+        }
+
+        public async Task DeleteServiceAsync(int id, CancellationToken cancellationToken)
+        {
+            var service = await unitOfWork.MetalServices.GetByIdAsync(id, cancellationToken);
+            if (service == null) throw new NotFoundException("Услуга", id);
+
+            foreach (var img in service.Images)
+            {
+                storageService.DeleteFile(img.ImageUrl);
+            }
+
+            unitOfWork.MetalServices.Delete(service);
             await unitOfWork.SaveChangesAsync(cancellationToken);
         }
     }

@@ -15,7 +15,7 @@
                 <a href="#" class="nav-link active" data-target="about-page">О нас</a>
                 <a href="#" class="nav-link" data-target="services-page">Услуги</a>
                 <a href="#" class="nav-link" data-target="unliquid-page">Неликвиды</a>
-                <button id="authBtn" class="btn-auth">Войти как Админ</button>
+                <button id="authBtn" class="btn-auth">Войти как Admin</button>
             </nav>
         </div>
     </header>
@@ -23,8 +23,7 @@
     <main id="about-page" class="container page-section">
         <div class="about-card">
             <h1>ЧТТУП «Лайт Торг Транс»</h1>
-            <p>Мы являемся надежным партнером в сфере материально-технического снабжения, логистики и высокоточной обработки металлопроката. Наша миссия — обеспечение предприятий качественными конструкционными материалами и готовыми изделиями точно в срок.</p>
-            <p>В рамках оптимизации складских запасов мы регулярно обновляем каталог доступных услуг и реализуем складские остатки (неликвиды) напрямую со склада по конкурентным ценам.</p>
+            <p>Мы являемся надежным партнером в сфере материально-технического снабжения, логистики и высокоточной обработки металлопроката.</p>
         </div>
     </main>
 
@@ -49,16 +48,20 @@
             <span class="close-modal">&times;</span>
 
             <div id="modalViewBody">
-                <img id="modalImage" src="" alt="Изображение" style="width:100%; max-height:220px; object-fit:cover; border-radius:4px; margin-bottom:15px;">
+                <div class="slider-wrapper">
+                    <button type="button" id="prevSlideBtn" class="slider-arrow prev">&lsaquo;</button>
+                    <div id="modalGallery" class="gallery-container"></div>
+                    <button type="button" id="nextSlideBtn" class="slider-arrow next">&rsaquo;</button>
+                </div>
                 <h2 id="modalTitle">Название</h2>
                 <p id="modalDescription">Описание</p>
-                <div class="modal-meta" id="modalMetaBlock">
+                <div class="modal-meta">
                     <span id="modalPrice">Цена</span>
                     <span id="modalQty">Остаток</span>
                 </div>
                 <div class="modal-actions">
-                    <a id="contactCall" href="tel:+375291112233" class="btn-action call">Позвонить</a>
-                    <a id="contactEmail" href="mailto:sales@lighttorgtrans.by" class="btn-action email">Написать на Email</a>
+                    <a href="tel:+375291112233" class="btn-action call">Позвонить</a>
+                    <a id="contactEmail" href="#" class="btn-action email">Написать на Email</a>
                 </div>
             </div>
 
@@ -70,7 +73,7 @@
                     <input type="text" id="editServiceTitle" required>
                 </div>
                 <div class="form-group">
-                    <label>Описание услуги</label>
+                    <label>Описание</label>
                     <textarea id="editServiceDescription" rows="3"></textarea>
                 </div>
                 <div class="form-group">
@@ -78,10 +81,14 @@
                     <input type="number" id="editServicePrice" step="0.01" required>
                 </div>
                 <div class="form-group">
-                    <label>Фотография услуги</label>
-                    <input type="file" id="editServiceImage" accept="image/*">
+                    <label>Текущие фотографии (нажмите &times; для удаления):</label>
+                    <div id="currentServiceImages" class="current-images-preview"></div>
                 </div>
-                <button type="submit" class="btn-save">Сохранить услугу</button>
+                <div class="form-group">
+                    <label>Добавить новые фотографии</label>
+                    <input type="file" id="editServiceImagesInput" accept="image/*" multiple>
+                </div>
+                <button type="submit" class="btn-save">Сохранить изменения</button>
             </form>
 
             <form id="modalForm" class="hidden" enctype="multipart/form-data">
@@ -102,12 +109,16 @@
                     </div>
                     <div>
                         <label>Остаток *</label>
-                        <input type="text" id="editQty" placeholder="например: 10 шт" required>
+                        <input type="text" id="editQty" required>
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>Фотография позиции</label>
-                    <input type="file" id="editProductImage" accept="image/*">
+                    <label>Текущие фотографии:</label>
+                    <div id="currentProductImages" class="current-images-preview"></div>
+                </div>
+                <div class="form-group">
+                    <label>Добавить новые фотографии</label>
+                    <input type="file" id="editProductImagesInput" accept="image/*" multiple>
                 </div>
                 <button type="submit" class="btn-save">Сохранить позицию</button>
             </form>
@@ -115,7 +126,7 @@
     </div>
 
     <footer class="footer">
-        <p>&copy; 2026 ЧТТУП Лайт Торг Транс. Информационная панель управления ресурсами.</p>
+        <p>&copy; 2026 ЧТТУП Лайт Торг Транс.</p>
     </footer>
 
     <script src="js/main.js"></script>

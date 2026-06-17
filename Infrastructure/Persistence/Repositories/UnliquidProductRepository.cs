@@ -7,10 +7,10 @@ namespace Infrastructure.Persistence.Repositories
     public class UnliquidProductRepository(AppDbContext context) : IUnliquidProductRepository
     {
         public async Task<IEnumerable<UnliquidProduct>> GetAllAsync(CancellationToken cancellationToken)
-            => await context.UnliquidProducts.ToListAsync(cancellationToken);
+            => await context.UnliquidProducts.Include(x => x.Images).ToListAsync(cancellationToken);
 
         public async Task<UnliquidProduct?> GetByIdAsync(int id, CancellationToken cancellationToken)
-            => await context.UnliquidProducts.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+            => await context.UnliquidProducts.Include(x => x.Images).FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
         public async Task AddAsync(UnliquidProduct product, CancellationToken cancellationToken)
             => await context.UnliquidProducts.AddAsync(product, cancellationToken);

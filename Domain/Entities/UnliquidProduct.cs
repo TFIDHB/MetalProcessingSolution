@@ -7,6 +7,6 @@
         public string Description { get; set; } = string.Empty;
         public double Price { get; set; }
         public string Quantity { get; set; } = string.Empty;
-        public string ImageUrl { get; set; } = "/images/no-image.png";
+        public List<UnliquidProductImage> Images { get; set; } = [];
     }
 }

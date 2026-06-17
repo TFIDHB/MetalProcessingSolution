@@ -10,6 +10,18 @@ namespace Infrastructure.Persistence
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<MetalService>()
+                .HasMany(s => s.Images)
+                .WithOne(i => i.MetalService)
+                .HasForeignKey(i => i.MetalServiceId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<UnliquidProduct>()
+                .HasMany(p => p.Images)
+                .WithOne(i => i.UnliquidProduct)
+                .HasForeignKey(i => i.UnliquidProductId)
+                .OnDelete(DeleteBehavior.Cascade);
+
             modelBuilder.Entity<MetalService>().HasData(
                 new MetalService { Id = 1, Title = "Лазерная резка ЧПУ", Description = "Высокоточный раскрой листового проката до 20мм.", PriceFrom = 12.50 },
                 new MetalService { Id = 2, Title = "Гибка листового металла", Description = "Радиусная и профильная гибка на гидравлических прессах.", PriceFrom = 6.80 }

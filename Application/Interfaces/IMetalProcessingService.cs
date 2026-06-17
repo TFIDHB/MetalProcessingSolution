@@ -5,7 +5,7 @@ namespace Application.Interfaces
 {
     public interface IMetalProcessingService
     {
-        Task<IEnumerable<UnliquidProduct>> GetUnliquidProductsAsync(CancellationToken cancellationToken);
+        Task<IEnumerable<UnliquidProductResponseDto>> GetUnliquidProductsAsync(CancellationToken cancellationToken);
         Task<int> CreateUnliquidAsync(UnliquidProductDto dto, CancellationToken cancellationToken);
         Task UpdateUnliquidAsync(int id, UnliquidProductDto dto, CancellationToken cancellationToken);
         Task DeleteUnliquidAsync(int id, CancellationToken cancellationToken);

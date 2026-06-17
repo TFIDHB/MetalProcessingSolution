@@ -7,6 +7,7 @@ namespace Application.DTOs
         public string Title { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         public double PriceFrom { get; set; }
-        public IFormFile? ImageFile { get; set; }
+        public List<IFormFile>? NewImages { get; set; }
+        public List<int>? DeleteImageIds { get; set; }
     }
 }
