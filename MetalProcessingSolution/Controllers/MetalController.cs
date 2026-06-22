@@ -1,5 +1,6 @@
 ﻿using Application.DTOs;
 using Application.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MetalProcessingSolution.Controllers
@@ -13,10 +14,12 @@ namespace MetalProcessingSolution.Controllers
             => Ok(await service.GetServicesAsync(ct));
 
         [HttpPost("services")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateService([FromForm] MetalServiceDto dto, CancellationToken ct)
             => Ok(await service.CreateServiceAsync(dto, ct));
 
         [HttpPut("services/{id:int}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateService(int id, [FromForm] MetalServiceDto dto, CancellationToken ct)
         {
             await service.UpdateServiceAsync(id, dto, ct);
@@ -24,6 +27,7 @@ namespace MetalProcessingSolution.Controllers
         }
 
         [HttpDelete("services/{id:int}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteService(int id, CancellationToken ct)
         {
             await service.DeleteServiceAsync(id, ct);
@@ -35,10 +39,12 @@ namespace MetalProcessingSolution.Controllers
             => Ok(await service.GetUnliquidProductsAsync(ct));
 
         [HttpPost("unliquid")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateUnliquid([FromForm] UnliquidProductDto dto, CancellationToken ct)
             => Ok(await service.CreateUnliquidAsync(dto, ct));
 
         [HttpPut("unliquid/{id:int}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateUnliquid(int id, [FromForm] UnliquidProductDto dto, CancellationToken ct)
         {
             await service.UpdateUnliquidAsync(id, dto, ct);
@@ -46,6 +52,7 @@ namespace MetalProcessingSolution.Controllers
         }
 
         [HttpDelete("unliquid/{id:int}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteUnliquid(int id, CancellationToken ct)
         {
             await service.DeleteUnliquidAsync(id, ct);
