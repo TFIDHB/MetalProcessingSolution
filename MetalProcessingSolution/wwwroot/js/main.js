@@ -59,6 +59,13 @@ function onAuthSuccess() {
     document.getElementById("cabinetEmail").innerText = State.user.email;
     document.getElementById("cabinetRole").innerText = State.user.role === "Admin" ? "Администратор" : "Пользователь";
 
+    if (State.user.role === "Admin") {
+        document.getElementById("adminNavLink").classList.remove("hidden");
+        document.getElementById("addServiceBtn").classList.remove("hidden");
+        document.getElementById("addAdminProductBtn").classList.remove("hidden");
+        loadStats();
+    }
+
     renderServiceCards();
     renderUnliquidCards();
 }
@@ -71,6 +78,9 @@ function onAuthClear() {
     btn.onclick = openAuthModal;
 
     document.getElementById("cabinetNavLink").classList.add("hidden");
+    document.getElementById("adminNavLink").classList.add("hidden");
+    document.getElementById("addServiceBtn").classList.add("hidden");
+    document.getElementById("addAdminProductBtn").classList.add("hidden");
 
     renderServiceCards();
     renderUnliquidCards();
@@ -396,6 +406,60 @@ async function deleteProduct(id) {
 }
 
 
+async function loadStats() {
+    const res = await fetch("/api/admin/stats");
+    if (!res.ok) return;
+    const stats = await res.json();
+    document.getElementById("statServices").innerText = stats.servicesCount;
+    document.getElementById("statUnliquids").innerText = stats.unliquidsCount;
+    document.getElementById("statTotal").innerText = stats.totalUnliquidsValue.toFixed(2);
+}
+
+async function adjustPrices(type) {
+    const inputId = type === "services" ? "servicePricePercent" : "unliquidPricePercent";
+    const msgId = type === "services" ? "servicePriceMsg" : "unliquidPriceMsg";
+    const msgEl = document.getElementById(msgId);
+    const percent = parseFloat(document.getElementById(inputId).value);
+
+    msgEl.className = "admin-msg hidden";
+    msgEl.innerText = "";
+
+    if (isNaN(percent) || percent === 0) {
+        msgEl.className = "admin-msg error";
+        msgEl.innerText = "Введите ненулевое значение.";
+        return;
+    }
+
+    const label = type === "services" ? "услуг" : "неликвидов";
+    const confirmText = percent > 0
+        ? `Повысить все цены ${label} на ${percent}%?`
+        : `Снизить все цены ${label} на ${Math.abs(percent)}%?`;
+
+    if (!confirm(confirmText)) return;
+
+    const endpoint = type === "services"
+        ? "/api/admin/adjust-service-prices"
+        : "/api/admin/adjust-unliquid-prices";
+
+    const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ percent })
+    });
+
+    if (res.ok) {
+        msgEl.className = "admin-msg success";
+        msgEl.innerText = `Цены успешно обновлены на ${percent > 0 ? "+" : ""}${percent}%.`;
+        document.getElementById(inputId).value = "";
+        await Promise.all([loadServices(), loadUnliquids(), loadStats()]);
+    } else {
+        const err = await res.json();
+        msgEl.className = "admin-msg error";
+        msgEl.innerText = err.detail || "Ошибка при обновлении цен.";
+    }
+}
+
+
 function initModalEvents() {
     const productModal = document.getElementById("productModal");
 
@@ -461,7 +525,6 @@ function initModalEvents() {
     });
 
     document.getElementById("authBtn").onclick = openAuthModal;
-
     document.getElementById("addServiceBtn").onclick = () => openServiceForm();
     document.getElementById("addAdminProductBtn").onclick = () => openUnliquidForm();
 }

@@ -1,5 +1,4 @@
 ﻿using Application.DTOs;
-using Domain.Entities;
 
 namespace Application.Interfaces
 {
@@ -14,5 +13,9 @@ namespace Application.Interfaces
         Task<int> CreateServiceAsync(MetalServiceDto dto, CancellationToken cancellationToken);
         Task UpdateServiceAsync(int id, MetalServiceDto dto, CancellationToken cancellationToken);
         Task DeleteServiceAsync(int id, CancellationToken cancellationToken);
+
+        Task AdjustServicePricesAsync(PriceAdjustmentDto dto, CancellationToken cancellationToken);
+        Task AdjustUnliquidPricesAsync(PriceAdjustmentDto dto, CancellationToken cancellationToken);
+        Task<AdminStatsDto> GetStatsAsync(CancellationToken cancellationToken);
     }
 }

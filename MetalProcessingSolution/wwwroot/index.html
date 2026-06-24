@@ -16,6 +16,7 @@
                 <a href="#" class="nav-link" data-target="services-page">Услуги</a>
                 <a href="#" class="nav-link" data-target="unliquid-page">Неликвиды</a>
                 <a href="#" class="nav-link hidden" id="cabinetNavLink" data-target="cabinet-page">Личный кабинет</a>
+                <a href="#" class="nav-link hidden" id="adminNavLink" data-target="admin-page">Управление</a>
                 <button id="authBtn" class="btn-auth">Войти</button>
             </nav>
         </div>
@@ -70,6 +71,52 @@
                 <div id="changePasswordSuccess" style="color: var(--success); font-size: 13px; margin-bottom: 10px; display: none;">Пароль успешно изменён.</div>
                 <button type="submit" class="btn-save" style="width: auto; padding: 10px 24px;">Сохранить</button>
             </form>
+        </div>
+    </main>
+
+    <main id="admin-page" class="container page-section hidden">
+        <h2 class="section-title">Панель управления</h2>
+
+        <div class="admin-grid">
+
+            <div class="admin-card">
+                <h3 class="admin-card__title">Статистика</h3>
+                <div id="statsBlock" class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-value" id="statServices">—</span>
+                        <span class="stat-label">Услуг</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="statUnliquids">—</span>
+                        <span class="stat-label">Неликвидов</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="statTotal">—</span>
+                        <span class="stat-label">Сумма стоимости неликвидов (BYN)</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="admin-card">
+                <h3 class="admin-card__title">Изменить цены услуг</h3>
+                <p class="admin-card__desc">Положительное значение – повышение, отрицательное – понижение. Например: <b>10</b> = +10%, <b>-15</b> = −15%.</p>
+                <div class="admin-input-row">
+                    <input type="number" id="servicePricePercent" class="admin-input" placeholder="Например: 10 или -5" step="0.1">
+                    <button class="btn-save admin-btn" onclick="adjustPrices('services')">Применить</button>
+                </div>
+                <div id="servicePriceMsg" class="admin-msg hidden"></div>
+            </div>
+
+            <div class="admin-card">
+                <h3 class="admin-card__title">Изменить цены неликвидов</h3>
+                <p class="admin-card__desc">Положительное значение – повышение, отрицательное – понижение. Например: <b>10</b> = +10%, <b>-15</b> = −15%.</p>
+                <div class="admin-input-row">
+                    <input type="number" id="unliquidPricePercent" class="admin-input" placeholder="Например: 10 или -5" step="0.1">
+                    <button class="btn-save admin-btn" onclick="adjustPrices('unliquid')">Применить</button>
+                </div>
+                <div id="unliquidPriceMsg" class="admin-msg hidden"></div>
+            </div>
+
         </div>
     </main>
 
@@ -155,12 +202,6 @@
         </div>
     </div>
 
-    <footer class="footer">
-        <p>&copy; 2026 ЧТТУП Лайт Торг Транс.</p>
-    </footer>
-
-    <script src="js/main.js"></script>
-
     <div id="authModal" class="modal hidden">
         <div class="modal-content" style="max-width: 420px;">
             <span class="close-modal" id="closeAuthModal">&times;</span>
@@ -198,5 +239,10 @@
         </div>
     </div>
 
+    <footer class="footer">
+        <p>&copy; 2026 ЧТТУП Лайт Торг Транс.</p>
+    </footer>
+
+    <script src="js/main.js"></script>
 </body>
 </html>
