@@ -1,7 +1,6 @@
-﻿namespace Application.DTOs
+﻿namespace Application.DTOs;
+
+public class PriceAdjustmentDto
 {
-    public class PriceAdjustmentDto
-    {
-        public double Percent { get; set; }
-    }
+    public decimal Percent { get; set; }
 }

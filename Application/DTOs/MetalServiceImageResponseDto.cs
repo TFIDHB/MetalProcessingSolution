@@ -1,8 +1,7 @@
-﻿namespace Application.DTOs
+﻿namespace Application.DTOs;
+
+public class MetalServiceImageResponseDto
 {
-    public class MetalServiceImageResponseDto
-    {
-        public int Id { get; set; }
-        public string ImageUrl { get; set; } = string.Empty;
-    }
+    public int Id { get; set; }
+    public string ImageUrl { get; set; } = string.Empty;
 }

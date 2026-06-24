@@ -1,9 +1,8 @@
-﻿namespace Application.DTOs
+﻿namespace Application.DTOs;
+
+public class AdminStatsDto
 {
-    public class AdminStatsDto
-    {
-        public int ServicesCount { get; set; }
-        public int UnliquidsCount { get; set; }
-        public double TotalUnliquidsValue { get; set; }
-    }
+    public int ServicesCount { get; set; }
+    public int UnliquidsCount { get; set; }
+    public decimal TotalUnliquidsValue { get; set; }
 }
