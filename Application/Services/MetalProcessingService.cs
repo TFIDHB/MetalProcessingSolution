@@ -149,5 +149,66 @@ namespace Application.Services
             unitOfWork.MetalServices.Delete(service);
             await unitOfWork.SaveChangesAsync(cancellationToken);
         }
+
+        public async Task AdjustServicePricesAsync(PriceAdjustmentDto dto, CancellationToken cancellationToken)
+        {
+            if (dto.Percent == 0)
+                throw new AppValidationException("Процент не может быть равен нулю.");
+
+            if (dto.Percent <= -100)
+                throw new AppValidationException("Нельзя снизить цену на 100% и более.");
+
+            var services = await unitOfWork.MetalServices.GetAllAsync(cancellationToken);
+            var multiplier = 1 + dto.Percent / 100.0;
+
+            foreach (var service in services)
+            {
+                service.PriceFrom = Math.Round(service.PriceFrom * multiplier, 2);
+            }
+
+            foreach (var service in services)
+                unitOfWork.MetalServices.Update(service);
+
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+        }
+
+        public async Task AdjustUnliquidPricesAsync(PriceAdjustmentDto dto, CancellationToken cancellationToken)
+        {
+            if (dto.Percent == 0)
+                throw new AppValidationException("Процент не может быть равен нулю.");
+
+            if (dto.Percent <= -100)
+                throw new AppValidationException("Нельзя снизить цену на 100% и более.");
+
+            var products = await unitOfWork.UnliquidProducts.GetAllAsync(cancellationToken);
+            var multiplier = 1 + dto.Percent / 100.0;
+
+            foreach (var product in products)
+            {
+                product.Price = Math.Round(product.Price * multiplier, 2);
+            }
+
+            foreach (var product in products)
+                unitOfWork.UnliquidProducts.Update(product);
+
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+        }
+
+        public async Task<AdminStatsDto> GetStatsAsync(CancellationToken cancellationToken)
+        {
+            var services = await unitOfWork.MetalServices.GetAllAsync(cancellationToken);
+            var unliquids = await unitOfWork.UnliquidProducts.GetAllAsync(cancellationToken);
+
+            return new AdminStatsDto
+            {
+                ServicesCount = services.Count(),
+                UnliquidsCount = unliquids.Count(),
+                TotalUnliquidsValue = unliquids.Sum(p =>
+                {
+                    var digits = new string(p.Quantity.Where(char.IsDigit).ToArray());
+                    return int.TryParse(digits, out var qty) ? p.Price * qty : p.Price;
+                })
+            };
+        }
     }
 }

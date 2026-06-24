@@ -1,5 +1,6 @@
 ﻿using Application.Interfaces;
 using Application.Services;
+using Infrastructure.Services;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 
@@ -11,6 +12,7 @@ namespace Application.Extensions
         {
             services.AddAutoMapper(Assembly.GetExecutingAssembly());
             services.AddScoped<IMetalProcessingService, MetalProcessingService>();
+            services.AddScoped<IAuthService, AuthService>();
             return services;
         }
     }

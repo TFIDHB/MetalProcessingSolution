@@ -1,38 +1,207 @@
-const State = { role: "User", unliquids: [], services: [], currentImageIndex: 0, currentImagesArray: [] };
+const State = {
+    user: null,
+    unliquids: [],
+    services: [],
+    currentImageIndex: 0,
+    currentImagesArray: []
+};
 let imagesToDelete = [];
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
     initNavigation();
-    initAuth();
+    initModalEvents();
+    await checkAuth();
     loadServices();
     loadUnliquids();
-    initModalEvents();
 });
+
 
 function initNavigation() {
     document.querySelectorAll(".nav-link").forEach(link => {
         link.addEventListener("click", (e) => {
             e.preventDefault();
-            document.querySelectorAll(".nav-link").forEach(l => l.classList.remove("active"));
-            document.querySelectorAll(".page-section").forEach(s => s.classList.add("hidden"));
-            link.classList.add("active");
-            document.getElementById(link.getAttribute("data-target")).classList.remove("hidden");
+            navigateTo(link.getAttribute("data-target"));
         });
     });
 }
 
-function initAuth() {
+function navigateTo(pageId) {
+    document.querySelectorAll(".nav-link").forEach(l => l.classList.remove("active"));
+    document.querySelectorAll(".page-section").forEach(s => s.classList.add("hidden"));
+
+    const targetLink = document.querySelector(`.nav-link[data-target="${pageId}"]`);
+    if (targetLink) targetLink.classList.add("active");
+    document.getElementById(pageId).classList.remove("hidden");
+}
+
+
+async function checkAuth() {
+    try {
+        const res = await fetch("/api/auth/me");
+        if (res.ok) {
+            State.user = await res.json();
+            onAuthSuccess();
+        } else {
+            onAuthClear();
+        }
+    } catch {
+        onAuthClear();
+    }
+}
+
+function onAuthSuccess() {
     const btn = document.getElementById("authBtn");
-    btn.addEventListener("click", () => {
-        State.role = State.role === "User" ? "Admin" : "User";
-        btn.innerText = State.role === "Admin" ? "Выйти (Админ)" : "Войти как Админ";
-        btn.style.backgroundColor = State.role === "Admin" ? "#c0392b" : "#e67e22";
-        document.getElementById("addAdminProductBtn").classList.toggle("hidden", State.role !== "Admin");
-        document.getElementById("addServiceBtn").classList.toggle("hidden", State.role !== "Admin");
-        renderServiceCards();
-        renderUnliquidCards();
+    btn.innerText = "Выйти";
+    btn.style.backgroundColor = "#c0392b";
+    btn.onclick = logout;
+
+    document.getElementById("cabinetNavLink").classList.remove("hidden");
+    document.getElementById("cabinetEmail").innerText = State.user.email;
+    document.getElementById("cabinetRole").innerText = State.user.role === "Admin" ? "Администратор" : "Пользователь";
+
+    if (State.user.role === "Admin") {
+        document.getElementById("adminNavLink").classList.remove("hidden");
+        document.getElementById("addServiceBtn").classList.remove("hidden");
+        document.getElementById("addAdminProductBtn").classList.remove("hidden");
+        loadStats();
+    }
+
+    renderServiceCards();
+    renderUnliquidCards();
+}
+
+function onAuthClear() {
+    State.user = null;
+    const btn = document.getElementById("authBtn");
+    btn.innerText = "Войти";
+    btn.style.backgroundColor = "";
+    btn.onclick = openAuthModal;
+
+    document.getElementById("cabinetNavLink").classList.add("hidden");
+    document.getElementById("adminNavLink").classList.add("hidden");
+    document.getElementById("addServiceBtn").classList.add("hidden");
+    document.getElementById("addAdminProductBtn").classList.add("hidden");
+
+    renderServiceCards();
+    renderUnliquidCards();
+}
+
+async function logout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    onAuthClear();
+    navigateTo("about-page");
+}
+
+function isAdmin() {
+    return State.user?.role === "Admin";
+}
+
+
+function openAuthModal() {
+    showLoginForm();
+    document.getElementById("authModal").classList.remove("hidden");
+}
+
+function closeAuthModal() {
+    document.getElementById("authModal").classList.add("hidden");
+    clearAuthErrors();
+}
+
+function showLoginForm() {
+    document.getElementById("loginForm").classList.remove("hidden");
+    document.getElementById("registerForm").classList.add("hidden");
+    clearAuthErrors();
+}
+
+function showRegisterForm() {
+    document.getElementById("loginForm").classList.add("hidden");
+    document.getElementById("registerForm").classList.remove("hidden");
+    clearAuthErrors();
+}
+
+function clearAuthErrors() {
+    ["loginError", "registerError", "registerSuccess"].forEach(id => {
+        const el = document.getElementById(id);
+        el.style.display = "none";
+        el.innerText = "";
     });
 }
+
+function showError(elementId, message) {
+    const el = document.getElementById(elementId);
+    el.innerText = message;
+    el.style.display = "block";
+}
+
+async function submitLogin() {
+    const email = document.getElementById("loginEmail").value.trim();
+    const password = document.getElementById("loginPassword").value;
+
+    const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+    });
+
+    if (res.ok) {
+        State.user = await res.json();
+        closeAuthModal();
+        onAuthSuccess();
+    } else {
+        const err = await res.json();
+        showError("loginError", err.detail || "Неверный Email или пароль.");
+    }
+}
+
+async function submitRegister() {
+    const email = document.getElementById("registerEmail").value.trim();
+    const password = document.getElementById("registerPassword").value;
+
+    const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+    });
+
+    if (res.ok) {
+        const successEl = document.getElementById("registerSuccess");
+        successEl.innerText = "Аккаунт создан! Теперь войдите.";
+        successEl.style.display = "block";
+        setTimeout(() => showLoginForm(), 1500);
+    } else {
+        const err = await res.json();
+        showError("registerError", err.detail || "Ошибка регистрации.");
+    }
+}
+
+
+async function submitChangePassword(e) {
+    e.preventDefault();
+
+    const errorEl = document.getElementById("changePasswordError");
+    const successEl = document.getElementById("changePasswordSuccess");
+    errorEl.style.display = "none";
+    successEl.style.display = "none";
+
+    const res = await fetch("/api/auth/change-password", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            currentPassword: document.getElementById("currentPassword").value,
+            newPassword: document.getElementById("newPassword").value
+        })
+    });
+
+    if (res.ok) {
+        successEl.style.display = "block";
+        document.getElementById("changePasswordForm").reset();
+    } else {
+        const err = await res.json();
+        errorEl.innerText = err.detail || "Ошибка смены пароля.";
+        errorEl.style.display = "block";
+    }
+}
+
 
 async function loadServices() {
     const r = await fetch("/api/services");
@@ -54,19 +223,18 @@ function renderServiceCards() {
             </div>
             <div style="display:flex; gap:10px; margin-top:15px;">
                 <button class="btn-action call" style="padding:5px 10px; font-size:13px;" onclick="viewService(${s.id})">Открыть</button>
-                ${State.role === "Admin" ? `
+                ${isAdmin() ? `
                 <button class="btn-add" style="background:#2980b9; padding:5px 10px; font-size:13px;" onclick="openServiceForm(${s.id})">Ред.</button>
-                <button class="btn-auth" style="background:#c0392b; padding:5px 10px; font-size:13px;" onclick="deleteService(${s.id})">Х</button>` : ''}
+                <button class="btn-auth" style="background:#c0392b; padding:5px 10px; font-size:13px;" onclick="deleteService(${s.id})">Х</button>` : ""}
             </div>
         </div>`;
-    }).join('');
+    }).join("");
 }
 
 function viewService(id) {
     const s = State.services.find(x => x.id === id);
     hideAllModalForms();
     document.getElementById("modalViewBody").classList.remove("hidden");
-
     renderGallery(s.images);
     document.getElementById("modalTitle").innerText = s.title;
     document.getElementById("modalDescription").innerText = s.description;
@@ -81,7 +249,6 @@ function openServiceForm(id = null) {
     document.getElementById("serviceForm").classList.remove("hidden");
     document.getElementById("serviceForm").reset();
     imagesToDelete = [];
-
     const container = document.getElementById("currentServiceImages");
     container.innerHTML = "";
 
@@ -99,6 +266,7 @@ function openServiceForm(id = null) {
     }
     document.getElementById("productModal").classList.remove("hidden");
 }
+
 
 async function loadUnliquids() {
     const r = await fetch("/api/unliquid");
@@ -120,19 +288,18 @@ function renderUnliquidCards() {
             </div>
             <div style="display:flex; gap:10px; margin-top:15px;">
                 <button class="btn-action call" style="padding:5px 10px; font-size:13px;" onclick="viewProduct(${p.id})">Открыть</button>
-                ${State.role === "Admin" ? `
+                ${isAdmin() ? `
                 <button class="btn-add" style="background:#2980b9; padding:5px 10px; font-size:13px;" onclick="openUnliquidForm(${p.id})">Ред.</button>
-                <button class="btn-auth" style="background:#c0392b; padding:5px 10px; font-size:13px;" onclick="deleteProduct(${p.id})">Х</button>` : ''}
+                <button class="btn-auth" style="background:#c0392b; padding:5px 10px; font-size:13px;" onclick="deleteProduct(${p.id})">Х</button>` : ""}
             </div>
         </div>`;
-    }).join('');
+    }).join("");
 }
 
 function viewProduct(id) {
     const p = State.unliquids.find(x => x.id === id);
     hideAllModalForms();
     document.getElementById("modalViewBody").classList.remove("hidden");
-
     renderGallery(p.images);
     document.getElementById("modalTitle").innerText = p.name;
     document.getElementById("modalDescription").innerText = p.description;
@@ -147,7 +314,6 @@ function openUnliquidForm(id = null) {
     document.getElementById("modalForm").classList.remove("hidden");
     document.getElementById("modalForm").reset();
     imagesToDelete = [];
-
     const container = document.getElementById("currentProductImages");
     container.innerHTML = "";
 
@@ -167,6 +333,7 @@ function openUnliquidForm(id = null) {
     document.getElementById("productModal").classList.remove("hidden");
 }
 
+
 function renderGallery(images) {
     const container = document.getElementById("modalGallery");
     const prevBtn = document.getElementById("prevSlideBtn");
@@ -176,49 +343,40 @@ function renderGallery(images) {
     State.currentImageIndex = 0;
 
     if (State.currentImagesArray.length === 0) {
-        container.innerHTML = `<img src="/images/no-image.png" class="active" style="cursor: default;">`;
+        container.innerHTML = `<img src="/images/no-image.png" class="active" style="cursor:default;">`;
         prevBtn.classList.add("hidden");
         nextBtn.classList.add("hidden");
         return;
     }
 
-    container.innerHTML = State.currentImagesArray.map((img, index) => `
-        <img src="${img.imageUrl}" class="${index === 0 ? 'active' : ''}" alt="Фото">
-    `).join('');
+    container.innerHTML = State.currentImagesArray.map((img, i) =>
+        `<img src="${img.imageUrl}" class="${i === 0 ? "active" : ""}" alt="Фото">`
+    ).join("");
 
-    if (State.currentImagesArray.length <= 1) {
-        prevBtn.classList.add("hidden");
-        nextBtn.classList.add("hidden");
-    } else {
-        prevBtn.classList.remove("hidden");
-        nextBtn.classList.remove("hidden");
-    }
+    const hasMany = State.currentImagesArray.length > 1;
+    prevBtn.classList.toggle("hidden", !hasMany);
+    nextBtn.classList.toggle("hidden", !hasMany);
 }
 
 function changeSlide(direction) {
-    const imagesElements = document.querySelectorAll("#modalGallery img");
-    if (imagesElements.length <= 1) return;
-
-    imagesElements[State.currentImageIndex].classList.remove("active");
-
-    State.currentImageIndex += direction;
-    if (State.currentImageIndex >= imagesElements.length) {
-        State.currentImageIndex = 0;
-    } else if (State.currentImageIndex < 0) {
-        State.currentImageIndex = imagesElements.length - 1;
-    }
-
-    imagesElements[State.currentImageIndex].classList.add("active");
+    const imgs = document.querySelectorAll("#modalGallery img");
+    if (imgs.length <= 1) return;
+    imgs[State.currentImageIndex].classList.remove("active");
+    State.currentImageIndex = (State.currentImageIndex + direction + imgs.length) % imgs.length;
+    imgs[State.currentImageIndex].classList.add("active");
 }
 
 function renderEditableImages(images, container) {
-    if (!images || images.length === 0) { container.innerHTML = "<em>Нет загруженных фото</em>"; return; }
+    if (!images || images.length === 0) {
+        container.innerHTML = "<em>Нет загруженных фото</em>";
+        return;
+    }
     container.innerHTML = images.map(img => `
-        <div class="preview-item" id="img-block-${img.id}" style="position:relative; width:80px; height:80px; display:inline-block; margin-right:8px;">
+        <div id="img-block-${img.id}" style="position:relative; width:80px; height:80px; display:inline-block; margin-right:8px;">
             <img src="${img.imageUrl}" style="width:100%; height:100%; object-fit:cover; border-radius:4px;">
             <button type="button" onclick="queueImageDelete(${img.id})" style="position:absolute; top:-5px; right:-5px; background:#c0392b; color:white; border:none; border-radius:50%; width:20px; height:20px; cursor:pointer;">&times;</button>
         </div>
-    `).join('');
+    `).join("");
 }
 
 function queueImageDelete(id) {
@@ -232,26 +390,108 @@ function hideAllModalForms() {
     document.getElementById("serviceForm").classList.add("hidden");
 }
 
-async function deleteService(id) { if (confirm("Удалить?")) { await fetch(`/api/services/${id}`, { method: 'DELETE' }); loadServices(); } }
-async function deleteProduct(id) { if (confirm("Удалить?")) { await fetch(`/api/unliquid/${id}`, { method: 'DELETE' }); loadUnliquids(); } }
+
+async function deleteService(id) {
+    if (confirm("Удалить?")) {
+        await fetch(`/api/services/${id}`, { method: "DELETE" });
+        loadServices();
+    }
+}
+
+async function deleteProduct(id) {
+    if (confirm("Удалить?")) {
+        await fetch(`/api/unliquid/${id}`, { method: "DELETE" });
+        loadUnliquids();
+    }
+}
+
+
+async function loadStats() {
+    const res = await fetch("/api/admin/stats");
+    if (!res.ok) return;
+    const stats = await res.json();
+    document.getElementById("statServices").innerText = stats.servicesCount;
+    document.getElementById("statUnliquids").innerText = stats.unliquidsCount;
+    document.getElementById("statTotal").innerText = stats.totalUnliquidsValue.toFixed(2);
+}
+
+async function adjustPrices(type) {
+    const inputId = type === "services" ? "servicePricePercent" : "unliquidPricePercent";
+    const msgId = type === "services" ? "servicePriceMsg" : "unliquidPriceMsg";
+    const msgEl = document.getElementById(msgId);
+    const percent = parseFloat(document.getElementById(inputId).value);
+
+    msgEl.className = "admin-msg hidden";
+    msgEl.innerText = "";
+
+    if (isNaN(percent) || percent === 0) {
+        msgEl.className = "admin-msg error";
+        msgEl.innerText = "Введите ненулевое значение.";
+        return;
+    }
+
+    const label = type === "services" ? "услуг" : "неликвидов";
+    const confirmText = percent > 0
+        ? `Повысить все цены ${label} на ${percent}%?`
+        : `Снизить все цены ${label} на ${Math.abs(percent)}%?`;
+
+    if (!confirm(confirmText)) return;
+
+    const endpoint = type === "services"
+        ? "/api/admin/adjust-service-prices"
+        : "/api/admin/adjust-unliquid-prices";
+
+    const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ percent })
+    });
+
+    if (res.ok) {
+        msgEl.className = "admin-msg success";
+        msgEl.innerText = `Цены успешно обновлены на ${percent > 0 ? "+" : ""}${percent}%.`;
+        document.getElementById(inputId).value = "";
+        await Promise.all([loadServices(), loadUnliquids(), loadStats()]);
+    } else {
+        const err = await res.json();
+        msgEl.className = "admin-msg error";
+        msgEl.innerText = err.detail || "Ошибка при обновлении цен.";
+    }
+}
+
 
 function initModalEvents() {
-    const m = document.getElementById("productModal");
-    document.querySelector(".close-modal").addEventListener("click", () => m.classList.add("hidden"));
+    const productModal = document.getElementById("productModal");
 
-    document.getElementById("prevSlideBtn").addEventListener("click", () => {
-        changeSlide(-1);
+    document.querySelector(".close-modal").addEventListener("click", () =>
+        productModal.classList.add("hidden"));
+
+    productModal.addEventListener("click", (e) => {
+        if (e.target === productModal) productModal.classList.add("hidden");
     });
 
-    document.getElementById("nextSlideBtn").addEventListener("click", () => {
-        changeSlide(1);
-    });
-
+    document.getElementById("prevSlideBtn").addEventListener("click", () => changeSlide(-1));
+    document.getElementById("nextSlideBtn").addEventListener("click", () => changeSlide(1));
     document.getElementById("modalGallery").addEventListener("click", () => {
-        if (State.currentImagesArray.length > 1) {
-            changeSlide(1);
-        }
+        if (State.currentImagesArray.length > 1) changeSlide(1);
     });
+
+    document.getElementById("closeAuthModal").addEventListener("click", closeAuthModal);
+    document.getElementById("authModal").addEventListener("click", (e) => {
+        if (e.target === document.getElementById("authModal")) closeAuthModal();
+    });
+    document.getElementById("switchToRegister").addEventListener("click", (e) => {
+        e.preventDefault();
+        showRegisterForm();
+    });
+    document.getElementById("switchToLogin").addEventListener("click", (e) => {
+        e.preventDefault();
+        showLoginForm();
+    });
+    document.getElementById("loginSubmitBtn").addEventListener("click", submitLogin);
+    document.getElementById("registerSubmitBtn").addEventListener("click", submitRegister);
+
+    document.getElementById("changePasswordForm").addEventListener("submit", submitChangePassword);
 
     document.getElementById("serviceForm").addEventListener("submit", async (e) => {
         e.preventDefault();
@@ -260,13 +500,11 @@ function initModalEvents() {
         formData.append("title", document.getElementById("editServiceTitle").value);
         formData.append("description", document.getElementById("editServiceDescription").value);
         formData.append("priceFrom", parseFloat(document.getElementById("editServicePrice").value));
-
         const files = document.getElementById("editServiceImagesInput").files;
         for (let i = 0; i < files.length; i++) formData.append("newImages", files[i]);
         imagesToDelete.forEach(imgId => formData.append("deleteImageIds", imgId));
-
-        await fetch(id ? `/api/services/${id}` : '/api/services', { method: id ? 'PUT' : 'POST', body: formData });
-        m.classList.add("hidden");
+        await fetch(id ? `/api/services/${id}` : "/api/services", { method: id ? "PUT" : "POST", body: formData });
+        productModal.classList.add("hidden");
         loadServices();
     });
 
@@ -278,13 +516,15 @@ function initModalEvents() {
         formData.append("description", document.getElementById("editDescription").value);
         formData.append("price", parseFloat(document.getElementById("editPrice").value));
         formData.append("quantity", document.getElementById("editQty").value);
-
         const files = document.getElementById("editProductImagesInput").files;
         for (let i = 0; i < files.length; i++) formData.append("newImages", files[i]);
         imagesToDelete.forEach(imgId => formData.append("deleteImageIds", imgId));
-
-        await fetch(id ? `/api/unliquid/${id}` : '/api/unliquid', { method: id ? 'PUT' : 'POST', body: formData });
-        m.classList.add("hidden");
+        await fetch(id ? `/api/unliquid/${id}` : "/api/unliquid", { method: id ? "PUT" : "POST", body: formData });
+        productModal.classList.add("hidden");
         loadUnliquids();
     });
+
+    document.getElementById("authBtn").onclick = openAuthModal;
+    document.getElementById("addServiceBtn").onclick = () => openServiceForm();
+    document.getElementById("addAdminProductBtn").onclick = () => openUnliquidForm();
 }
