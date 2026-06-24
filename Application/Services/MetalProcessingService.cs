@@ -159,7 +159,7 @@ public class MetalProcessingService(IUnitOfWork unitOfWork, IMapper mapper, IFil
             throw new AppValidationException("Нельзя снизить цену на 100% и более.");
 
         var services = await unitOfWork.MetalServices.GetAllAsync(cancellationToken);
-        var multiplier = 1 + dto.Percent / 100.0;
+        var multiplier = 1 + dto.Percent / 100m;
 
         foreach (var service in services)
         {
@@ -181,7 +181,7 @@ public class MetalProcessingService(IUnitOfWork unitOfWork, IMapper mapper, IFil
             throw new AppValidationException("Нельзя снизить цену на 100% и более.");
 
         var products = await unitOfWork.UnliquidProducts.GetAllAsync(cancellationToken);
-        var multiplier = 1 + dto.Percent / 100.0;
+        var multiplier = 1 + dto.Percent / 100m;
 
         foreach (var product in products)
         {
