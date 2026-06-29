@@ -2,25 +2,24 @@
 using AutoMapper;
 using Domain.Entities;
 
-namespace Application.AutoMapper
+namespace Application.AutoMapper;
+
+public class MappingProfile : Profile
 {
-    public class MappingProfile : Profile
+    public MappingProfile()
     {
-        public MappingProfile()
-        {
-            CreateMap<MetalService, MetalServiceResponseDto>();
-            CreateMap<MetalServiceImage, MetalServiceImageResponseDto>();
+        CreateMap<MetalService, MetalServiceResponseDto>();
+        CreateMap<MetalServiceImage, MetalServiceImageResponseDto>();
 
-            CreateMap<UnliquidProduct, UnliquidProductResponseDto>();
-            CreateMap<UnliquidProductImage, UnliquidProductImageResponseDto>();
+        CreateMap<UnliquidProduct, UnliquidProductResponseDto>();
+        CreateMap<UnliquidProductImage, UnliquidProductImageResponseDto>();
 
-            CreateMap<MetalServiceDto, MetalService>()
-                .ForMember(dest => dest.Id, opt => opt.Ignore())
-                .ForMember(dest => dest.Images, opt => opt.Ignore());
+        CreateMap<MetalServiceDto, MetalService>()
+            .ForMember(dest => dest.Id, opt => opt.Ignore())
+            .ForMember(dest => dest.Images, opt => opt.Ignore());
 
-            CreateMap<UnliquidProductDto, UnliquidProduct>()
-                .ForMember(dest => dest.Id, opt => opt.Ignore())
-                .ForMember(dest => dest.Images, opt => opt.Ignore());
-        }
+        CreateMap<UnliquidProductDto, UnliquidProduct>()
+            .ForMember(dest => dest.Id, opt => opt.Ignore())
+            .ForMember(dest => dest.Images, opt => opt.Ignore());
     }
 }
