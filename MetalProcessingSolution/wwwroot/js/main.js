@@ -1,7 +1,8 @@
 const State = {
     user: null,
-    unliquids: [],
+    products: [],
     services: [],
+    currentShopCategory: null,
     currentImageIndex: 0,
     currentImagesArray: []
 };
@@ -12,28 +13,63 @@ document.addEventListener("DOMContentLoaded", async () => {
     initModalEvents();
     await checkAuth();
     loadServices();
-    loadUnliquids();
 });
-
 
 function initNavigation() {
     document.querySelectorAll(".nav-link").forEach(link => {
         link.addEventListener("click", (e) => {
             e.preventDefault();
+            closeShopDropdown();
             navigateTo(link.getAttribute("data-target"));
         });
+    });
+
+    document.addEventListener("click", (e) => {
+        if (!document.getElementById("shopDropdown").contains(e.target)) {
+            closeShopDropdown();
+        }
     });
 }
 
 function navigateTo(pageId) {
     document.querySelectorAll(".nav-link").forEach(l => l.classList.remove("active"));
     document.querySelectorAll(".page-section").forEach(s => s.classList.add("hidden"));
+    document.getElementById("shopDropdown").querySelector(".nav-dropdown__btn").classList.remove("active");
 
     const targetLink = document.querySelector(`.nav-link[data-target="${pageId}"]`);
     if (targetLink) targetLink.classList.add("active");
     document.getElementById(pageId).classList.remove("hidden");
 }
 
+function toggleShopDropdown() {
+    document.getElementById("shopDropdownMenu").classList.toggle("hidden");
+}
+
+function closeShopDropdown() {
+    document.getElementById("shopDropdownMenu").classList.add("hidden");
+}
+
+function openShopPage(category) {
+    closeShopDropdown();
+
+    const titles = {
+        Unliquid: "Неликвиды",
+        OurProducts: "Наша продукция",
+        GeneralGoods: "Товары широкого потребления"
+    };
+
+    State.currentShopCategory = category;
+    document.getElementById("shopPageTitle").innerText = titles[category] ?? "Интернет-магазин";
+
+    document.querySelectorAll(".nav-link").forEach(l => l.classList.remove("active"));
+    document.querySelectorAll(".page-section").forEach(s => s.classList.add("hidden"));
+    document.getElementById("shopDropdown").querySelector(".nav-dropdown__btn").classList.add("active");
+    document.getElementById("shop-page").classList.remove("hidden");
+
+    document.getElementById("addProductBtn").classList.toggle("hidden", !isAdmin());
+
+    loadProducts(category);
+}
 
 async function checkAuth() {
     try {
@@ -62,12 +98,11 @@ function onAuthSuccess() {
     if (State.user.role === "Admin") {
         document.getElementById("adminNavLink").classList.remove("hidden");
         document.getElementById("addServiceBtn").classList.remove("hidden");
-        document.getElementById("addAdminProductBtn").classList.remove("hidden");
         loadStats();
     }
 
     renderServiceCards();
-    renderUnliquidCards();
+    if (State.currentShopCategory) renderProductCards();
 }
 
 function onAuthClear() {
@@ -80,10 +115,10 @@ function onAuthClear() {
     document.getElementById("cabinetNavLink").classList.add("hidden");
     document.getElementById("adminNavLink").classList.add("hidden");
     document.getElementById("addServiceBtn").classList.add("hidden");
-    document.getElementById("addAdminProductBtn").classList.add("hidden");
+    document.getElementById("addProductBtn").classList.add("hidden");
 
     renderServiceCards();
-    renderUnliquidCards();
+    if (State.currentShopCategory) renderProductCards();
 }
 
 async function logout() {
@@ -95,7 +130,6 @@ async function logout() {
 function isAdmin() {
     return State.user?.role === "Admin";
 }
-
 
 function openAuthModal() {
     showLoginForm();
@@ -174,7 +208,6 @@ async function submitRegister() {
     }
 }
 
-
 async function submitChangePassword(e) {
     e.preventDefault();
 
@@ -202,9 +235,9 @@ async function submitChangePassword(e) {
     }
 }
 
-
 async function loadServices() {
     const r = await fetch("/api/services");
+    if (!r.ok) return;
     State.services = await r.json();
     renderServiceCards();
 }
@@ -218,7 +251,7 @@ function renderServiceCards() {
             <div>
                 <img src="${cover}" alt="Фото" style="width:100%; height:150px; object-fit:cover; border-radius:4px; margin-bottom:10px;">
                 <h3>${s.title}</h3>
-                <p>${s.description.substring(0, 60)}...</p>
+                <p>${(s.description ?? "").substring(0, 60)}...</p>
                 <div class="price">от ${s.priceFrom} BYN</div>
             </div>
             <div style="display:flex; gap:10px; margin-top:15px;">
@@ -267,29 +300,36 @@ function openServiceForm(id = null) {
     document.getElementById("productModal").classList.remove("hidden");
 }
 
-
-async function loadUnliquids() {
-    const r = await fetch("/api/unliquid");
-    State.unliquids = await r.json();
-    renderUnliquidCards();
+async function deleteService(id) {
+    if (confirm("Удалить?")) {
+        await fetch(`/api/services/${id}`, { method: "DELETE" });
+        loadServices();
+    }
 }
 
-function renderUnliquidCards() {
-    const grid = document.getElementById("unliquid-grid");
-    grid.innerHTML = State.unliquids.map(p => {
+async function loadProducts(category) {
+    const r = await fetch(`/api/products/${category}`);
+    if (!r.ok) return;
+    State.products = await r.json();
+    renderProductCards();
+}
+
+function renderProductCards() {
+    const grid = document.getElementById("shop-grid");
+    grid.innerHTML = State.products.map(p => {
         const cover = p.images.length > 0 ? p.images[0].imageUrl : "/images/no-image.png";
         return `
         <div class="service-card">
             <div>
                 <img src="${cover}" alt="Фото" style="width:100%; height:150px; object-fit:cover; border-radius:4px; margin-bottom:10px;">
                 <h3>${p.name}</h3>
-                <p>${p.description.substring(0, 60)}...</p>
+                <p>${(p.description ?? "").substring(0, 60)}...</p>
                 <div class="price">${p.price} BYN</div>
             </div>
             <div style="display:flex; gap:10px; margin-top:15px;">
                 <button class="btn-action call" style="padding:5px 10px; font-size:13px;" onclick="viewProduct(${p.id})">Открыть</button>
                 ${isAdmin() ? `
-                <button class="btn-add" style="background:#2980b9; padding:5px 10px; font-size:13px;" onclick="openUnliquidForm(${p.id})">Ред.</button>
+                <button class="btn-add" style="background:#2980b9; padding:5px 10px; font-size:13px;" onclick="openProductForm(${p.id})">Ред.</button>
                 <button class="btn-auth" style="background:#c0392b; padding:5px 10px; font-size:13px;" onclick="deleteProduct(${p.id})">Х</button>` : ""}
             </div>
         </div>`;
@@ -297,7 +337,7 @@ function renderUnliquidCards() {
 }
 
 function viewProduct(id) {
-    const p = State.unliquids.find(x => x.id === id);
+    const p = State.products.find(x => x.id === id);
     hideAllModalForms();
     document.getElementById("modalViewBody").classList.remove("hidden");
     renderGallery(p.images);
@@ -309,30 +349,38 @@ function viewProduct(id) {
     document.getElementById("productModal").classList.remove("hidden");
 }
 
-function openUnliquidForm(id = null) {
+function openProductForm(id = null) {
     hideAllModalForms();
-    document.getElementById("modalForm").classList.remove("hidden");
-    document.getElementById("modalForm").reset();
+    document.getElementById("productForm").classList.remove("hidden");
+    document.getElementById("productForm").reset();
     imagesToDelete = [];
     const container = document.getElementById("currentProductImages");
     container.innerHTML = "";
 
     if (id) {
-        const p = State.unliquids.find(x => x.id === id);
-        document.getElementById("formProductId").value = p.id;
-        document.getElementById("editName").value = p.name;
-        document.getElementById("editDescription").value = p.description;
-        document.getElementById("editPrice").value = p.price;
-        document.getElementById("editQty").value = p.quantity;
-        document.getElementById("formTitle").innerText = "Редактировать товар";
+        const p = State.products.find(x => x.id === id);
+        document.getElementById("editProductId").value = p.id;
+        document.getElementById("editProductCategory").value = p.category;
+        document.getElementById("editProductName").value = p.name;
+        document.getElementById("editProductDescription").value = p.description;
+        document.getElementById("editProductPrice").value = p.price;
+        document.getElementById("editProductQty").value = p.quantity;
+        document.getElementById("productFormTitle").innerText = "Редактировать товар";
         renderEditableImages(p.images, container);
     } else {
-        document.getElementById("formProductId").value = "";
-        document.getElementById("formTitle").innerText = "Добавить неликвид";
+        document.getElementById("editProductId").value = "";
+        document.getElementById("editProductCategory").value = State.currentShopCategory;
+        document.getElementById("productFormTitle").innerText = "Добавить товар";
     }
     document.getElementById("productModal").classList.remove("hidden");
 }
 
+async function deleteProduct(id) {
+    if (confirm("Удалить?")) {
+        await fetch(`/api/products/${id}`, { method: "DELETE" });
+        loadProducts(State.currentShopCategory);
+    }
+}
 
 function renderGallery(images) {
     const container = document.getElementById("modalGallery");
@@ -386,25 +434,9 @@ function queueImageDelete(id) {
 
 function hideAllModalForms() {
     document.getElementById("modalViewBody").classList.add("hidden");
-    document.getElementById("modalForm").classList.add("hidden");
+    document.getElementById("productForm").classList.add("hidden");
     document.getElementById("serviceForm").classList.add("hidden");
 }
-
-
-async function deleteService(id) {
-    if (confirm("Удалить?")) {
-        await fetch(`/api/services/${id}`, { method: "DELETE" });
-        loadServices();
-    }
-}
-
-async function deleteProduct(id) {
-    if (confirm("Удалить?")) {
-        await fetch(`/api/unliquid/${id}`, { method: "DELETE" });
-        loadUnliquids();
-    }
-}
-
 
 async function loadStats() {
     const res = await fetch("/api/admin/stats");
@@ -412,14 +444,29 @@ async function loadStats() {
     const stats = await res.json();
     document.getElementById("statServices").innerText = stats.servicesCount;
     document.getElementById("statUnliquids").innerText = stats.unliquidsCount;
-    document.getElementById("statTotal").innerText = stats.totalUnliquidsValue.toFixed(2);
+    document.getElementById("statOurProducts").innerText = stats.ourProductsCount;
+    document.getElementById("statGeneralGoods").innerText = stats.generalGoodsCount;
 }
 
-async function adjustPrices(type) {
-    const inputId = type === "services" ? "servicePricePercent" : "unliquidPricePercent";
-    const msgId = type === "services" ? "servicePriceMsg" : "unliquidPriceMsg";
-    const msgEl = document.getElementById(msgId);
-    const percent = parseFloat(document.getElementById(inputId).value);
+async function adjustProductPrices(category) {
+    const inputIds = {
+        Unliquid: "unliquidPricePercent",
+        OurProducts: "ourProductsPricePercent",
+        GeneralGoods: "generalGoodsPricePercent"
+    };
+    const msgIds = {
+        Unliquid: "unliquidPriceMsg",
+        OurProducts: "ourProductsPriceMsg",
+        GeneralGoods: "generalGoodsPriceMsg"
+    };
+    const labels = {
+        Unliquid: "неликвидов",
+        OurProducts: "нашей продукции",
+        GeneralGoods: "товаров широкого потребления"
+    };
+
+    const msgEl = document.getElementById(msgIds[category]);
+    const percent = parseFloat(document.getElementById(inputIds[category]).value);
 
     msgEl.className = "admin-msg hidden";
     msgEl.innerText = "";
@@ -430,18 +477,13 @@ async function adjustPrices(type) {
         return;
     }
 
-    const label = type === "services" ? "услуг" : "неликвидов";
     const confirmText = percent > 0
-        ? `Повысить все цены ${label} на ${percent}%?`
-        : `Снизить все цены ${label} на ${Math.abs(percent)}%?`;
+        ? `Повысить все цены ${labels[category]} на ${percent}%?`
+        : `Снизить все цены ${labels[category]} на ${Math.abs(percent)}%?`;
 
     if (!confirm(confirmText)) return;
 
-    const endpoint = type === "services"
-        ? "/api/admin/adjust-service-prices"
-        : "/api/admin/adjust-unliquid-prices";
-
-    const res = await fetch(endpoint, {
+    const res = await fetch(`/api/admin/adjust-product-prices/${category}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ percent })
@@ -450,8 +492,9 @@ async function adjustPrices(type) {
     if (res.ok) {
         msgEl.className = "admin-msg success";
         msgEl.innerText = `Цены успешно обновлены на ${percent > 0 ? "+" : ""}${percent}%.`;
-        document.getElementById(inputId).value = "";
-        await Promise.all([loadServices(), loadUnliquids(), loadStats()]);
+        document.getElementById(inputIds[category]).value = "";
+        if (State.currentShopCategory === category) loadProducts(category);
+        loadStats();
     } else {
         const err = await res.json();
         msgEl.className = "admin-msg error";
@@ -459,6 +502,38 @@ async function adjustPrices(type) {
     }
 }
 
+async function adjustPrices(type) {
+    const msgEl = document.getElementById("servicePriceMsg");
+    const percent = parseFloat(document.getElementById("servicePricePercent").value);
+
+    msgEl.className = "admin-msg hidden";
+    msgEl.innerText = "";
+
+    if (isNaN(percent) || percent === 0) {
+        msgEl.className = "admin-msg error";
+        msgEl.innerText = "Введите ненулевое значение.";
+        return;
+    }
+
+    if (!confirm(percent > 0 ? `Повысить все цены услуг на ${percent}%?` : `Снизить все цены услуг на ${Math.abs(percent)}%?`)) return;
+
+    const res = await fetch("/api/admin/adjust-service-prices", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ percent })
+    });
+
+    if (res.ok) {
+        msgEl.className = "admin-msg success";
+        msgEl.innerText = `Цены услуг обновлены на ${percent > 0 ? "+" : ""}${percent}%.`;
+        document.getElementById("servicePricePercent").value = "";
+        await Promise.all([loadServices(), loadStats()]);
+    } else {
+        const err = await res.json();
+        msgEl.className = "admin-msg error";
+        msgEl.innerText = err.detail || "Ошибка при обновлении цен.";
+    }
+}
 
 function initModalEvents() {
     const productModal = document.getElementById("productModal");
@@ -508,23 +583,25 @@ function initModalEvents() {
         loadServices();
     });
 
-    document.getElementById("modalForm").addEventListener("submit", async (e) => {
+    document.getElementById("productForm").addEventListener("submit", async (e) => {
         e.preventDefault();
-        const id = document.getElementById("formProductId").value;
+        const id = document.getElementById("editProductId").value;
+        const category = document.getElementById("editProductCategory").value;
         const formData = new FormData();
-        formData.append("name", document.getElementById("editName").value);
-        formData.append("description", document.getElementById("editDescription").value);
-        formData.append("price", parseFloat(document.getElementById("editPrice").value));
-        formData.append("quantity", document.getElementById("editQty").value);
+        formData.append("name", document.getElementById("editProductName").value);
+        formData.append("description", document.getElementById("editProductDescription").value);
+        formData.append("price", parseFloat(document.getElementById("editProductPrice").value));
+        formData.append("quantity", document.getElementById("editProductQty").value);
+        formData.append("category", category);
         const files = document.getElementById("editProductImagesInput").files;
         for (let i = 0; i < files.length; i++) formData.append("newImages", files[i]);
         imagesToDelete.forEach(imgId => formData.append("deleteImageIds", imgId));
-        await fetch(id ? `/api/unliquid/${id}` : "/api/unliquid", { method: id ? "PUT" : "POST", body: formData });
+        await fetch(id ? `/api/products/${id}` : "/api/products", { method: id ? "PUT" : "POST", body: formData });
         productModal.classList.add("hidden");
-        loadUnliquids();
+        loadProducts(State.currentShopCategory);
     });
 
     document.getElementById("authBtn").onclick = openAuthModal;
     document.getElementById("addServiceBtn").onclick = () => openServiceForm();
-    document.getElementById("addAdminProductBtn").onclick = () => openUnliquidForm();
+    document.getElementById("addProductBtn").onclick = () => openProductForm();
 }

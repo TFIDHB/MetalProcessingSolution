@@ -1,9 +1,10 @@
-﻿namespace Application.Interfaces;
-
-public interface IUnitOfWork
+﻿namespace Application.Interfaces
 {
-    IMetalServiceRepository MetalServices { get; }
-    IUnliquidProductRepository UnliquidProducts { get; }
-    Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
-    IUserRepository Users { get; }
+    public interface IUnitOfWork
+    {
+        IMetalServiceRepository MetalServices { get; }
+        IProductRepository Products { get; }
+        IUserRepository Users { get; }
+        Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+    }
 }
