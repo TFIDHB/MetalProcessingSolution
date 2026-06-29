@@ -14,7 +14,17 @@
             <nav class="navigation">
                 <a href="#" class="nav-link active" data-target="about-page">О нас</a>
                 <a href="#" class="nav-link" data-target="services-page">Услуги</a>
-                <a href="#" class="nav-link" data-target="unliquid-page">Неликвиды</a>
+                <div class="nav-dropdown" id="shopDropdown">
+                    <button class="nav-dropdown__btn" onclick="toggleShopDropdown()">
+                        Интернет-магазин ▾
+                    </button>
+                    <div class="nav-dropdown__menu hidden" id="shopDropdownMenu">
+                        <a href="#" class="nav-dropdown__item" onclick="openShopPage('Unliquid')">Неликвиды</a>
+                        <a href="#" class="nav-dropdown__item" onclick="openShopPage('OurProducts')">Наша продукция</a>
+                        <a href="#" class="nav-dropdown__item" onclick="openShopPage('GeneralGoods')">Товары широкого потребления</a>
+                    </div>
+                </div>
+                <a href="#" class="nav-link" data-target="delivery-page">Доставка</a>
                 <a href="#" class="nav-link hidden" id="cabinetNavLink" data-target="cabinet-page">Личный кабинет</a>
                 <a href="#" class="nav-link hidden" id="adminNavLink" data-target="admin-page">Управление</a>
                 <button id="authBtn" class="btn-auth">Войти</button>
@@ -26,6 +36,8 @@
         <div class="about-card">
             <h1>ЧТТУП «Лайт Торг Транс»</h1>
             <p>Мы являемся надежным партнером в сфере материально-технического снабжения и высокоточной металлообработки.</p>
+            <p>Юридический адрес: 211522 г. Новополоцк, ул. Армейская 58, комната 1</p>
+            <p>Телефон: +375291234545</p>
         </div>
     </main>
 
@@ -37,12 +49,37 @@
         <div id="services-grid" class="services-grid"></div>
     </main>
 
-    <main id="unliquid-page" class="container page-section hidden">
+    <main id="shop-page" class="container page-section hidden">
         <div class="section-header-admin">
-            <h2 class="section-title">Распродажа неликвидов складов</h2>
-            <button id="addAdminProductBtn" class="btn-add hidden" onclick="openUnliquidForm()">＋ Добавить позицию</button>
+            <h2 class="section-title" id="shopPageTitle">Интернет-магазин</h2>
+            <button id="addProductBtn" class="btn-add hidden" onclick="openProductForm()">＋ Добавить товар</button>
         </div>
-        <div id="unliquid-grid" class="services-grid"></div>
+        <div id="shop-grid" class="services-grid"></div>
+    </main>
+
+    <main id="delivery-page" class="container page-section hidden">
+        <h2 class="section-title">Доставка</h2>
+        <div class="delivery-grid">
+
+            <div class="delivery-card">
+                <h3 class="delivery-card__title">Самовывоз</h3>
+                <p class="delivery-card__text">Вы можете забрать товар самостоятельно с нашего склада по предварительному согласованию. Адрес и время выдачи уточняйте по телефону или email.</p>
+                <p class="delivery-card__note">Бесплатно · По согласованию</p>
+            </div>
+
+            <div class="delivery-card">
+                <h3 class="delivery-card__title">Экспресс-доставка</h3>
+                <p class="delivery-card__text">Доставка курьерскими службами СДЭК, DPD, Gex по Беларуси. Сроки доставки – 1–3 рабочих дня в зависимости от региона.</p>
+                <p class="delivery-card__note">Стоимость рассчитывается индивидуально</p>
+            </div>
+
+            <div class="delivery-card">
+                <h3 class="delivery-card__title">Почта Беларуси / EuroPost</h3>
+                <p class="delivery-card__text">Доставка Почтой Беларуси или EuroPost в любую точку страны. Подходит для небольших и средних по весу отправлений.</p>
+                <p class="delivery-card__note">Сроки – 3–7 рабочих дней</p>
+            </div>
+
+        </div>
     </main>
 
     <main id="cabinet-page" class="container page-section hidden">
@@ -81,7 +118,7 @@
 
             <div class="admin-card">
                 <h3 class="admin-card__title">Статистика</h3>
-                <div id="statsBlock" class="stats-grid">
+                <div class="stats-grid">
                     <div class="stat-item">
                         <span class="stat-value" id="statServices">—</span>
                         <span class="stat-label">Услуг</span>
@@ -91,30 +128,54 @@
                         <span class="stat-label">Неликвидов</span>
                     </div>
                     <div class="stat-item">
-                        <span class="stat-value" id="statTotal">—</span>
-                        <span class="stat-label">Сумма стоимости неликвидов (BYN)</span>
+                        <span class="stat-value" id="statOurProducts">—</span>
+                        <span class="stat-label">Наша продукция</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="statGeneralGoods">—</span>
+                        <span class="stat-label">Широкое потребление</span>
                     </div>
                 </div>
             </div>
 
             <div class="admin-card">
                 <h3 class="admin-card__title">Изменить цены услуг</h3>
-                <p class="admin-card__desc">Положительное значение – повышение, отрицательное – понижение. Например: <b>10</b> = +10%, <b>-15</b> = −15%.</p>
+                <p class="admin-card__desc">Положительное значение — повышение, отрицательное — понижение. Например: <b>10</b> = +10%, <b>-15</b> = −15%.</p>
                 <div class="admin-input-row">
                     <input type="number" id="servicePricePercent" class="admin-input" placeholder="Например: 10 или -5" step="0.1">
-                    <button class="btn-save admin-btn" onclick="adjustPrices('services')">Применить</button>
+                    <button class="btn-save admin-btn" onclick="adjustPrices()">Применить</button>
                 </div>
                 <div id="servicePriceMsg" class="admin-msg hidden"></div>
             </div>
 
             <div class="admin-card">
                 <h3 class="admin-card__title">Изменить цены неликвидов</h3>
-                <p class="admin-card__desc">Положительное значение – повышение, отрицательное – понижение. Например: <b>10</b> = +10%, <b>-15</b> = −15%.</p>
+                <p class="admin-card__desc">Положительное значение — повышение, отрицательное — понижение. Например: <b>10</b> = +10%, <b>-15</b> = −15%.</p>
                 <div class="admin-input-row">
                     <input type="number" id="unliquidPricePercent" class="admin-input" placeholder="Например: 10 или -5" step="0.1">
-                    <button class="btn-save admin-btn" onclick="adjustPrices('unliquid')">Применить</button>
+                    <button class="btn-save admin-btn" onclick="adjustProductPrices('Unliquid')">Применить</button>
                 </div>
                 <div id="unliquidPriceMsg" class="admin-msg hidden"></div>
+            </div>
+
+            <div class="admin-card">
+                <h3 class="admin-card__title">Изменить цены – Наша продукция</h3>
+                <p class="admin-card__desc">Положительное значение — повышение, отрицательное — понижение. Например: <b>10</b> = +10%, <b>-15</b> = −15%.</p>
+                <div class="admin-input-row">
+                    <input type="number" id="ourProductsPricePercent" class="admin-input" placeholder="Например: 10 или -5" step="0.1">
+                    <button class="btn-save admin-btn" onclick="adjustProductPrices('OurProducts')">Применить</button>
+                </div>
+                <div id="ourProductsPriceMsg" class="admin-msg hidden"></div>
+            </div>
+
+            <div class="admin-card">
+                <h3 class="admin-card__title">Изменить цены – Товары широкого потребления</h3>
+                <p class="admin-card__desc">Положительное значение — повышение, отрицательное — понижение. Например: <b>10</b> = +10%, <b>-15</b> = −15%.</p>
+                <div class="admin-input-row">
+                    <input type="number" id="generalGoodsPricePercent" class="admin-input" placeholder="Например: 10 или -5" step="0.1">
+                    <button class="btn-save admin-btn" onclick="adjustProductPrices('GeneralGoods')">Применить</button>
+                </div>
+                <div id="generalGoodsPriceMsg" class="admin-msg hidden"></div>
             </div>
 
         </div>
@@ -168,25 +229,26 @@
                 <button type="submit" class="btn-save">Сохранить изменения</button>
             </form>
 
-            <form id="modalForm" class="hidden" enctype="multipart/form-data">
-                <h2 id="formTitle">Управление неликвидом</h2>
-                <input type="hidden" id="formProductId">
+            <form id="productForm" class="hidden" enctype="multipart/form-data">
+                <h2 id="productFormTitle">Управление товаром</h2>
+                <input type="hidden" id="editProductId">
+                <input type="hidden" id="editProductCategory">
                 <div class="form-group">
                     <label>Наименование товара *</label>
-                    <input type="text" id="editName" required>
+                    <input type="text" id="editProductName" required>
                 </div>
                 <div class="form-group">
                     <label>Описание</label>
-                    <textarea id="editDescription" rows="3"></textarea>
+                    <textarea id="editProductDescription" rows="3"></textarea>
                 </div>
                 <div class="form-group-row">
                     <div>
                         <label>Цена (BYN) *</label>
-                        <input type="number" id="editPrice" step="0.01" required>
+                        <input type="number" id="editProductPrice" step="0.01" required>
                     </div>
                     <div>
                         <label>Остаток *</label>
-                        <input type="text" id="editQty" required>
+                        <input type="text" id="editProductQty" required>
                     </div>
                 </div>
                 <div class="form-group">
@@ -199,6 +261,7 @@
                 </div>
                 <button type="submit" class="btn-save">Сохранить позицию</button>
             </form>
+
         </div>
     </div>
 
