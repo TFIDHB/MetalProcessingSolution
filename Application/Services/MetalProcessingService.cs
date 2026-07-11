@@ -6,8 +6,91 @@ using Domain.Entities;
 
 namespace Application.Services
 {
-    public class MetalProcessingService(IUnitOfWork unitOfWork, IMapper mapper, IFileStorageService storageService) : IMetalProcessingService
+    public class MetalProcessingService(
+        IUnitOfWork unitOfWork,
+        IMapper mapper,
+        IFileStorageService storageService) : IMetalProcessingService
     {
+        public async Task<IEnumerable<ProductResponseDto>> GetProductsByCategoryAsync(string category, CancellationToken cancellationToken)
+        {
+            if (!Enum.TryParse<ProductCategory>(category, true, out var cat))
+                throw new AppValidationException($"Неизвестная категория: {category}");
+
+            var products = await unitOfWork.Products.GetByCategoryAsync(cat, cancellationToken);
+            return mapper.Map<IEnumerable<ProductResponseDto>>(products);
+        }
+
+        public async Task<int> CreateProductAsync(ProductDto dto, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(dto.Name) || dto.Price <= 0)
+                throw new AppValidationException("Название товара обязательно, а цена должна быть выше нуля.");
+
+            if (!Enum.TryParse<ProductCategory>(dto.Category, true, out var cat))
+                throw new AppValidationException($"Неизвестная категория: {dto.Category}");
+
+            var product = mapper.Map<Product>(dto);
+            product.Category = cat;
+
+            if (dto.NewImages != null)
+            {
+                foreach (var file in dto.NewImages)
+                {
+                    var url = await storageService.SaveFileAsync(file, "products", cancellationToken);
+                    product.Images.Add(new ProductImage { ImageUrl = url });
+                }
+            }
+
+            await unitOfWork.Products.AddAsync(product, cancellationToken);
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+            return product.Id;
+        }
+
+        public async Task UpdateProductAsync(int id, ProductDto dto, CancellationToken cancellationToken)
+        {
+            var product = await unitOfWork.Products.GetByIdAsync(id, cancellationToken);
+            if (product == null) throw new NotFoundException("Товар", id);
+
+            mapper.Map(dto, product);
+
+            if (!string.IsNullOrWhiteSpace(dto.Category) &&
+                Enum.TryParse<ProductCategory>(dto.Category, true, out var cat))
+                product.Category = cat;
+
+            if (dto.DeleteImageIds != null && dto.DeleteImageIds.Count > 0)
+            {
+                var toRemove = product.Images.Where(i => dto.DeleteImageIds.Contains(i.Id)).ToList();
+                foreach (var img in toRemove)
+                {
+                    storageService.DeleteFile(img.ImageUrl);
+                    product.Images.Remove(img);
+                }
+            }
+
+            if (dto.NewImages != null)
+            {
+                foreach (var file in dto.NewImages)
+                {
+                    var url = await storageService.SaveFileAsync(file, "products", cancellationToken);
+                    product.Images.Add(new ProductImage { ImageUrl = url });
+                }
+            }
+
+            unitOfWork.Products.Update(product);
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+        }
+
+        public async Task DeleteProductAsync(int id, CancellationToken cancellationToken)
+        {
+            var product = await unitOfWork.Products.GetByIdAsync(id, cancellationToken);
+            if (product == null) throw new NotFoundException("Товар", id);
+
+            foreach (var img in product.Images)
+                storageService.DeleteFile(img.ImageUrl);
+
+            unitOfWork.Products.Delete(product);
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+        }
+
         public async Task<IEnumerable<MetalServiceResponseDto>> GetServicesAsync(CancellationToken cancellationToken)
         {
             var services = await unitOfWork.MetalServices.GetAllAsync(cancellationToken);
@@ -21,9 +104,13 @@ namespace Application.Services
 
             var service = mapper.Map<MetalService>(dto);
 
-            if (dto.ImageFile != null)
+            if (dto.NewImages != null)
             {
-                service.ImageUrl = await storageService.SaveFileAsync(dto.ImageFile, "services", cancellationToken);
+                foreach (var file in dto.NewImages)
+                {
+                    var url = await storageService.SaveFileAsync(file, "services", cancellationToken);
+                    service.Images.Add(new MetalServiceImage { ImageUrl = url });
+                }
             }
 
             await unitOfWork.MetalServices.AddAsync(service, cancellationToken);
@@ -38,10 +125,23 @@ namespace Application.Services
 
             mapper.Map(dto, service);
 
-            if (dto.ImageFile != null)
+            if (dto.DeleteImageIds != null && dto.DeleteImageIds.Count > 0)
             {
-                storageService.DeleteFile(service.ImageUrl);
-                service.ImageUrl = await storageService.SaveFileAsync(dto.ImageFile, "services", cancellationToken);
+                var toRemove = service.Images.Where(i => dto.DeleteImageIds.Contains(i.Id)).ToList();
+                foreach (var img in toRemove)
+                {
+                    storageService.DeleteFile(img.ImageUrl);
+                    service.Images.Remove(img);
+                }
+            }
+
+            if (dto.NewImages != null)
+            {
+                foreach (var file in dto.NewImages)
+                {
+                    var url = await storageService.SaveFileAsync(file, "services", cancellationToken);
+                    service.Images.Add(new MetalServiceImage { ImageUrl = url });
+                }
             }
 
             unitOfWork.MetalServices.Update(service);
@@ -53,57 +153,73 @@ namespace Application.Services
             var service = await unitOfWork.MetalServices.GetByIdAsync(id, cancellationToken);
             if (service == null) throw new NotFoundException("Услуга", id);
 
-            storageService.DeleteFile(service.ImageUrl);
+            foreach (var img in service.Images)
+                storageService.DeleteFile(img.ImageUrl);
+
             unitOfWork.MetalServices.Delete(service);
             await unitOfWork.SaveChangesAsync(cancellationToken);
         }
-        public async Task<IEnumerable<UnliquidProduct>> GetUnliquidProductsAsync(CancellationToken cancellationToken)
+
+        public async Task AdjustServicePricesAsync(PriceAdjustmentDto dto, CancellationToken cancellationToken)
         {
-            return await unitOfWork.UnliquidProducts.GetAllAsync(cancellationToken);
-        }
+            if (dto.Percent == 0) throw new AppValidationException("Процент не может быть равен нулю.");
+            if (dto.Percent <= -100) throw new AppValidationException("Нельзя снизить цену на 100% и более.");
 
-        public async Task<int> CreateUnliquidAsync(UnliquidProductDto dto, CancellationToken cancellationToken)
-        {
-            if (string.IsNullOrWhiteSpace(dto.Name) || dto.Price <= 0)
-                throw new AppValidationException("Название товара обязательно, а цена должна быть выше нуля.");
+            var services = await unitOfWork.MetalServices.GetAllAsync(cancellationToken);
+            var multiplier = 1 + dto.Percent / 100m;
 
-            var product = mapper.Map<UnliquidProduct>(dto);
-
-            if (dto.ImageFile != null)
+            foreach (var service in services)
             {
-                product.ImageUrl = await storageService.SaveFileAsync(dto.ImageFile, "products", cancellationToken);
+                service.PriceFrom = Math.Round(service.PriceFrom * multiplier, 2);
+                unitOfWork.MetalServices.Update(service);
             }
 
-            await unitOfWork.UnliquidProducts.AddAsync(product, cancellationToken);
             await unitOfWork.SaveChangesAsync(cancellationToken);
-            return product.Id;
         }
 
-        public async Task UpdateUnliquidAsync(int id, UnliquidProductDto dto, CancellationToken cancellationToken)
+        public async Task AdjustProductPricesAsync(string category, PriceAdjustmentDto dto, CancellationToken cancellationToken)
         {
-            var product = await unitOfWork.UnliquidProducts.GetByIdAsync(id, cancellationToken);
-            if (product == null) throw new NotFoundException("Неликвидный товар", id);
+            if (dto.Percent == 0) throw new AppValidationException("Процент не может быть равен нулю.");
+            if (dto.Percent <= -100) throw new AppValidationException("Нельзя снизить цену на 100% и более.");
 
-            mapper.Map(dto, product);
+            if (!Enum.TryParse<ProductCategory>(category, true, out var cat))
+                throw new AppValidationException($"Неизвестная категория: {category}");
 
-            if (dto.ImageFile != null)
+            var products = await unitOfWork.Products.GetByCategoryAsync(cat, cancellationToken);
+            var multiplier = 1 + dto.Percent / 100m;
+
+            foreach (var product in products)
             {
-                storageService.DeleteFile(product.ImageUrl);
-                product.ImageUrl = await storageService.SaveFileAsync(dto.ImageFile, "products", cancellationToken);
+                product.Price = Math.Round(product.Price * multiplier, 2);
+                unitOfWork.Products.Update(product);
             }
 
-            unitOfWork.UnliquidProducts.Update(product);
             await unitOfWork.SaveChangesAsync(cancellationToken);
         }
 
-        public async Task DeleteUnliquidAsync(int id, CancellationToken cancellationToken)
+        public async Task<AdminStatsDto> GetStatsAsync(CancellationToken cancellationToken)
         {
-            var product = await unitOfWork.UnliquidProducts.GetByIdAsync(id, cancellationToken);
-            if (product == null) throw new NotFoundException("Неликвидный товар", id);
+            var services = await unitOfWork.MetalServices.GetAllAsync(cancellationToken);
+            var unliquids = await unitOfWork.Products.GetByCategoryAsync(ProductCategory.Unliquid, cancellationToken);
+            var ourProducts = await unitOfWork.Products.GetByCategoryAsync(ProductCategory.OurProducts, cancellationToken);
+            var generalGoods = await unitOfWork.Products.GetByCategoryAsync(ProductCategory.GeneralGoods, cancellationToken);
 
-            storageService.DeleteFile(product.ImageUrl);
-            unitOfWork.UnliquidProducts.Delete(product);
-            await unitOfWork.SaveChangesAsync(cancellationToken);
+            decimal CalcValue(IEnumerable<Product> products) => products.Sum(p =>
+            {
+                var digits = new string(p.Quantity.Where(char.IsDigit).ToArray());
+                return int.TryParse(digits, out var qty) ? p.Price * qty : p.Price;
+            });
+
+            return new AdminStatsDto
+            {
+                ServicesCount = services.Count(),
+                UnliquidsCount = unliquids.Count(),
+                OurProductsCount = ourProducts.Count(),
+                GeneralGoodsCount = generalGoods.Count(),
+                TotalUnliquidsValue = CalcValue(unliquids),
+                TotalOurProductsValue = CalcValue(ourProducts),
+                TotalGeneralGoodsValue = CalcValue(generalGoods)
+            };
         }
     }
 }

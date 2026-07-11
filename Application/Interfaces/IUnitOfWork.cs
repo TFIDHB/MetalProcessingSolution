@@ -3,7 +3,8 @@
     public interface IUnitOfWork
     {
         IMetalServiceRepository MetalServices { get; }
-        IUnliquidProductRepository UnliquidProducts { get; }
+        IProductRepository Products { get; }
+        IUserRepository Users { get; }
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     }
 }

@@ -1,7 +1,6 @@
-﻿namespace Application.Exceptions
+﻿namespace Application.Exceptions;
+
+public class AppValidationException : Exception
 {
-    public class AppValidationException : Exception
-    {
-        public AppValidationException(string message) : base(message) { }
-    }
+    public AppValidationException(string message) : base(message) { }
 }
