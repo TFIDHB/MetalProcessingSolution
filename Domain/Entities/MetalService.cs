@@ -1,11 +1,10 @@
-﻿namespace Domain.Entities
+﻿namespace Domain.Entities;
+
+public class MetalService
 {
-    public class MetalService
-    {
-        public int Id { get; set; }
-        public string Title { get; set; } = string.Empty;
-        public string Description { get; set; } = string.Empty;
-        public double PriceFrom { get; set; }
-        public string ImageUrl { get; set; } = "/images/no-image.png";
-    }
+    public int Id { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public decimal PriceFrom { get; set; }
+    public List<MetalServiceImage> Images { get; set; } = [];
 }

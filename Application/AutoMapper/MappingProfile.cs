@@ -9,15 +9,20 @@ namespace Application.AutoMapper
         public MappingProfile()
         {
             CreateMap<MetalService, MetalServiceResponseDto>();
-            CreateMap<UnliquidProduct, UnliquidProduct>();
+            CreateMap<MetalServiceImage, MetalServiceImageResponseDto>();
+
+            CreateMap<Product, ProductResponseDto>()
+                .ForMember(dest => dest.Category, opt => opt.MapFrom(src => src.Category.ToString()));
+            CreateMap<ProductImage, ProductImageResponseDto>();
 
             CreateMap<MetalServiceDto, MetalService>()
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
-                .ForMember(dest => dest.ImageUrl, opt => opt.Ignore());
+                .ForMember(dest => dest.Images, opt => opt.Ignore());
 
-            CreateMap<UnliquidProductDto, UnliquidProduct>()
+            CreateMap<ProductDto, Product>()
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
-                .ForMember(dest => dest.ImageUrl, opt => opt.Ignore());
+                .ForMember(dest => dest.Images, opt => opt.Ignore())
+                .ForMember(dest => dest.Category, opt => opt.Ignore());
         }
     }
 }

@@ -14,8 +14,20 @@
             <nav class="navigation">
                 <a href="#" class="nav-link active" data-target="about-page">О нас</a>
                 <a href="#" class="nav-link" data-target="services-page">Услуги</a>
-                <a href="#" class="nav-link" data-target="unliquid-page">Неликвиды</a>
-                <button id="authBtn" class="btn-auth">Войти как Админ</button>
+                <div class="nav-dropdown" id="shopDropdown">
+                    <button class="nav-dropdown__btn" onclick="toggleShopDropdown()">
+                        Интернет-магазин ▾
+                    </button>
+                    <div class="nav-dropdown__menu hidden" id="shopDropdownMenu">
+                        <a href="#" class="nav-dropdown__item" onclick="openShopPage('Unliquid')">Неликвиды</a>
+                        <a href="#" class="nav-dropdown__item" onclick="openShopPage('OurProducts')">Наша продукция</a>
+                        <a href="#" class="nav-dropdown__item" onclick="openShopPage('GeneralGoods')">Товары широкого потребления</a>
+                    </div>
+                </div>
+                <a href="#" class="nav-link" data-target="delivery-page">Доставка</a>
+                <a href="#" class="nav-link hidden" id="cabinetNavLink" data-target="cabinet-page">Личный кабинет</a>
+                <a href="#" class="nav-link hidden" id="adminNavLink" data-target="admin-page">Управление</a>
+                <button id="authBtn" class="btn-auth">Войти</button>
             </nav>
         </div>
     </header>
@@ -23,8 +35,10 @@
     <main id="about-page" class="container page-section">
         <div class="about-card">
             <h1>ЧТТУП «Лайт Торг Транс»</h1>
-            <p>Мы являемся надежным партнером в сфере материально-технического снабжения, логистики и высокоточной обработки металлопроката. Наша миссия — обеспечение предприятий качественными конструкционными материалами и готовыми изделиями точно в срок.</p>
-            <p>В рамках оптимизации складских запасов мы регулярно обновляем каталог доступных услуг и реализуем складские остатки (неликвиды) напрямую со склада по конкурентным ценам.</p>
+            <p>Компания «Лайт Торг Транс» осуществляет комплексные услуги по металлообработке на территории Республики Беларусь. Основные направления деятельности включают токарную и фрезерную обработку, лазерную и плазменную резку, сварочные работы, а также изготовление металлоконструкций по чертежам заказчика.</p>
+            <p style="margin-bottom: 20px;">Производственные мощности оснащены современным оборудованием с ЧПУ, что обеспечивает высокую точность обработки и стабильность качества. Контроль на всех этапах производства гарантирует соответствие продукции техническим требованиям и стандартам.</p>
+            <p><b>Юридический адрес:</b> 211522 г. Новополоцк, ул. Армейская 58, комната 1</p>
+            <p><b>Телефон:</b> +375291234545</p>
         </div>
     </main>
 
@@ -36,12 +50,136 @@
         <div id="services-grid" class="services-grid"></div>
     </main>
 
-    <main id="unliquid-page" class="container page-section hidden">
+    <main id="shop-page" class="container page-section hidden">
         <div class="section-header-admin">
-            <h2 class="section-title">Распродажа неликвидов складов</h2>
-            <button id="addAdminProductBtn" class="btn-add hidden" onclick="openUnliquidForm()">＋ Добавить позицию</button>
+            <h2 class="section-title" id="shopPageTitle">Интернет-магазин</h2>
+            <button id="addProductBtn" class="btn-add hidden" onclick="openProductForm()">＋ Добавить товар</button>
         </div>
-        <div id="unliquid-grid" class="services-grid"></div>
+        <div id="shop-grid" class="services-grid"></div>
+    </main>
+
+    <main id="delivery-page" class="container page-section hidden">
+        <h2 class="section-title">Доставка</h2>
+        <div class="delivery-grid">
+
+            <div class="delivery-card">
+                <h3 class="delivery-card__title">Самовывоз</h3>
+                <p class="delivery-card__text">Вы можете забрать товар самостоятельно с нашего склада по предварительному согласованию. Адрес и время выдачи уточняйте по телефону или email.</p>
+                <p class="delivery-card__note">Бесплатно · По согласованию</p>
+            </div>
+
+            <div class="delivery-card">
+                <h3 class="delivery-card__title">Экспресс-доставка</h3>
+                <p class="delivery-card__text">Доставка курьерскими службами СДЭК, DPD, Gex по Беларуси. Сроки доставки – 1–3 рабочих дня в зависимости от региона.</p>
+                <p class="delivery-card__note">Стоимость рассчитывается индивидуально</p>
+            </div>
+
+            <div class="delivery-card">
+                <h3 class="delivery-card__title">Почта Беларуси / EuroPost</h3>
+                <p class="delivery-card__text">Доставка Почтой Беларуси или EuroPost в любую точку страны. Подходит для небольших и средних по весу отправлений.</p>
+                <p class="delivery-card__note">Сроки – 3–7 рабочих дней</p>
+            </div>
+
+        </div>
+    </main>
+
+    <main id="cabinet-page" class="container page-section hidden">
+        <div class="about-card">
+            <h2 style="margin-bottom: 20px; color: var(--primary);">Личный кабинет</h2>
+            <div style="margin-bottom: 10px;">
+                <span style="font-size: 13px; color: #7f8c8d;">Email</span>
+                <p id="cabinetEmail" style="font-weight: bold;"></p>
+            </div>
+            <div style="margin-bottom: 24px;">
+                <span style="font-size: 13px; color: #7f8c8d;">Роль</span>
+                <p id="cabinetRole" style="font-weight: bold;"></p>
+            </div>
+            <hr style="margin-bottom: 24px; border-color: #ecf0f1;">
+            <h3 style="margin-bottom: 16px; color: var(--primary);">Сменить пароль</h3>
+            <form id="changePasswordForm" style="max-width: 400px;">
+                <div class="form-group">
+                    <label>Текущий пароль</label>
+                    <input type="password" id="currentPassword" required>
+                </div>
+                <div class="form-group">
+                    <label>Новый пароль</label>
+                    <input type="password" id="newPassword" required>
+                </div>
+                <div id="changePasswordError" style="color: var(--error); font-size: 13px; margin-bottom: 10px; display: none;"></div>
+                <div id="changePasswordSuccess" style="color: var(--success); font-size: 13px; margin-bottom: 10px; display: none;">Пароль успешно изменён.</div>
+                <button type="submit" class="btn-save" style="width: auto; padding: 10px 24px;">Сохранить</button>
+            </form>
+        </div>
+    </main>
+
+    <main id="admin-page" class="container page-section hidden">
+        <h2 class="section-title">Панель управления</h2>
+
+        <div class="admin-grid">
+
+            <div class="admin-card">
+                <h3 class="admin-card__title">Статистика</h3>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-value" id="statServices">—</span>
+                        <span class="stat-label">Услуг</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="statUnliquids">—</span>
+                        <span class="stat-label">Неликвидов</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="statOurProducts">—</span>
+                        <span class="stat-label">Наша продукция</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="statGeneralGoods">—</span>
+                        <span class="stat-label">Широкое потребление</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="admin-card">
+                <h3 class="admin-card__title">Изменить цены услуг</h3>
+                <p class="admin-card__desc">Положительное значение — повышение, отрицательное — понижение. Например: <b>10</b> = +10%, <b>-15</b> = −15%.</p>
+                <div class="admin-input-row">
+                    <input type="number" id="servicePricePercent" class="admin-input" placeholder="Например: 10 или -5" step="0.1">
+                    <button class="btn-save admin-btn" onclick="adjustPrices()">Применить</button>
+                </div>
+                <div id="servicePriceMsg" class="admin-msg hidden"></div>
+            </div>
+
+            <div class="admin-card">
+                <h3 class="admin-card__title">Изменить цены неликвидов</h3>
+                <p class="admin-card__desc">Положительное значение — повышение, отрицательное — понижение. Например: <b>10</b> = +10%, <b>-15</b> = −15%.</p>
+                <div class="admin-input-row">
+                    <input type="number" id="unliquidPricePercent" class="admin-input" placeholder="Например: 10 или -5" step="0.1">
+                    <button class="btn-save admin-btn" onclick="adjustProductPrices('Unliquid')">Применить</button>
+                </div>
+                <div id="unliquidPriceMsg" class="admin-msg hidden"></div>
+            </div>
+
+            <div class="admin-card">
+                <h3 class="admin-card__title">Изменить цены – Наша продукция</h3>
+                <p class="admin-card__desc">Положительное значение — повышение, отрицательное — понижение. Например: <b>10</b> = +10%, <b>-15</b> = −15%.</p>
+                <div class="admin-input-row">
+                    <input type="number" id="ourProductsPricePercent" class="admin-input" placeholder="Например: 10 или -5" step="0.1">
+                    <button class="btn-save admin-btn" onclick="adjustProductPrices('OurProducts')">Применить</button>
+                </div>
+                <div id="ourProductsPriceMsg" class="admin-msg hidden"></div>
+            </div>
+
+            <div class="admin-card">
+                <h3 class="admin-card__title">Изменить цены – Товары широкого потребления</h3>
+                <p class="admin-card__desc">Положительное значение — повышение, отрицательное — понижение. Например: <b>10</b> = +10%, <b>-15</b> = −15%.</p>
+                <div class="admin-input-row">
+                    <input type="number" id="generalGoodsPricePercent" class="admin-input" placeholder="Например: 10 или -5" step="0.1">
+                    <button class="btn-save admin-btn" onclick="adjustProductPrices('GeneralGoods')">Применить</button>
+                </div>
+                <div id="generalGoodsPriceMsg" class="admin-msg hidden"></div>
+            </div>
+
+        </div>
     </main>
 
     <div id="productModal" class="modal hidden">
@@ -49,16 +187,20 @@
             <span class="close-modal">&times;</span>
 
             <div id="modalViewBody">
-                <img id="modalImage" src="" alt="Изображение" style="width:100%; max-height:220px; object-fit:cover; border-radius:4px; margin-bottom:15px;">
+                <div class="slider-wrapper">
+                    <button type="button" id="prevSlideBtn" class="slider-arrow prev">&lsaquo;</button>
+                    <div id="modalGallery" class="gallery-container"></div>
+                    <button type="button" id="nextSlideBtn" class="slider-arrow next">&rsaquo;</button>
+                </div>
                 <h2 id="modalTitle">Название</h2>
                 <p id="modalDescription">Описание</p>
-                <div class="modal-meta" id="modalMetaBlock">
+                <div class="modal-meta">
                     <span id="modalPrice">Цена</span>
                     <span id="modalQty">Остаток</span>
                 </div>
                 <div class="modal-actions">
-                    <a id="contactCall" href="tel:+375291112233" class="btn-action call">Позвонить</a>
-                    <a id="contactEmail" href="mailto:sales@lighttorgtrans.by" class="btn-action email">Написать на Email</a>
+                    <a href="tel:+375291112233" class="btn-action call">Позвонить</a>
+                    <a id="contactEmail" href="#" class="btn-action email">Написать на Email</a>
                 </div>
             </div>
 
@@ -70,7 +212,7 @@
                     <input type="text" id="editServiceTitle" required>
                 </div>
                 <div class="form-group">
-                    <label>Описание услуги</label>
+                    <label>Описание</label>
                     <textarea id="editServiceDescription" rows="3"></textarea>
                 </div>
                 <div class="form-group">
@@ -78,44 +220,91 @@
                     <input type="number" id="editServicePrice" step="0.01" required>
                 </div>
                 <div class="form-group">
-                    <label>Фотография услуги</label>
-                    <input type="file" id="editServiceImage" accept="image/*">
+                    <label>Текущие фотографии (нажмите &times; для удаления):</label>
+                    <div id="currentServiceImages" class="current-images-preview"></div>
                 </div>
-                <button type="submit" class="btn-save">Сохранить услугу</button>
+                <div class="form-group">
+                    <label>Добавить новые фотографии</label>
+                    <input type="file" id="editServiceImagesInput" accept="image/*" multiple>
+                </div>
+                <button type="submit" class="btn-save">Сохранить изменения</button>
             </form>
 
-            <form id="modalForm" class="hidden" enctype="multipart/form-data">
-                <h2 id="formTitle">Управление неликвидом</h2>
-                <input type="hidden" id="formProductId">
+            <form id="productForm" class="hidden" enctype="multipart/form-data">
+                <h2 id="productFormTitle">Управление товаром</h2>
+                <input type="hidden" id="editProductId">
+                <input type="hidden" id="editProductCategory">
                 <div class="form-group">
                     <label>Наименование товара *</label>
-                    <input type="text" id="editName" required>
+                    <input type="text" id="editProductName" required>
                 </div>
                 <div class="form-group">
                     <label>Описание</label>
-                    <textarea id="editDescription" rows="3"></textarea>
+                    <textarea id="editProductDescription" rows="3"></textarea>
                 </div>
                 <div class="form-group-row">
                     <div>
                         <label>Цена (BYN) *</label>
-                        <input type="number" id="editPrice" step="0.01" required>
+                        <input type="number" id="editProductPrice" step="0.01" required>
                     </div>
                     <div>
                         <label>Остаток *</label>
-                        <input type="text" id="editQty" placeholder="например: 10 шт" required>
+                        <input type="text" id="editProductQty" required>
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>Фотография позиции</label>
-                    <input type="file" id="editProductImage" accept="image/*">
+                    <label>Текущие фотографии:</label>
+                    <div id="currentProductImages" class="current-images-preview"></div>
+                </div>
+                <div class="form-group">
+                    <label>Добавить новые фотографии</label>
+                    <input type="file" id="editProductImagesInput" accept="image/*" multiple>
                 </div>
                 <button type="submit" class="btn-save">Сохранить позицию</button>
             </form>
+
+        </div>
+    </div>
+
+    <div id="authModal" class="modal hidden">
+        <div class="modal-content" style="max-width: 420px;">
+            <span class="close-modal" id="closeAuthModal">&times;</span>
+
+            <div id="loginForm">
+                <h2 style="margin-bottom: 8px;">Вход</h2>
+                <p style="font-size: 13px; color: #7f8c8d; margin-bottom: 20px;">Нет аккаунта? <a href="#" id="switchToRegister" style="color: var(--accent);">Зарегистрироваться</a></p>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="loginEmail" required>
+                </div>
+                <div class="form-group">
+                    <label>Пароль</label>
+                    <input type="password" id="loginPassword" required>
+                </div>
+                <div id="loginError" style="color: var(--error); font-size: 13px; margin-bottom: 10px; display: none;"></div>
+                <button class="btn-save" id="loginSubmitBtn">Войти</button>
+            </div>
+
+            <div id="registerForm" class="hidden">
+                <h2 style="margin-bottom: 8px;">Регистрация</h2>
+                <p style="font-size: 13px; color: #7f8c8d; margin-bottom: 20px;">Уже есть аккаунт? <a href="#" id="switchToLogin" style="color: var(--accent);">Войти</a></p>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="registerEmail" required>
+                </div>
+                <div class="form-group">
+                    <label>Пароль (минимум 6 символов)</label>
+                    <input type="password" id="registerPassword" required>
+                </div>
+                <div id="registerError" style="color: var(--error); font-size: 13px; margin-bottom: 10px; display: none;"></div>
+                <div id="registerSuccess" style="color: var(--success); font-size: 13px; margin-bottom: 10px; display: none;"></div>
+                <button class="btn-save" id="registerSubmitBtn">Зарегистрироваться</button>
+            </div>
         </div>
     </div>
 
     <footer class="footer">
-        <p>&copy; 2026 ЧТТУП Лайт Торг Транс. Информационная панель управления ресурсами.</p>
+        <p>&copy; 2026 ЧТТУП Лайт Торг Транс.</p>
     </footer>
 
     <script src="js/main.js"></script>
