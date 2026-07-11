@@ -1,0 +1,34 @@
+# ── Этап 1: сборка ────────────────────────────────────────────
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+WORKDIR /src
+
+# Копируем .sln и все .csproj — слои кэшируются, restore быстрый
+COPY MetalProcessingSolution.sln ./
+COPY MetalProcessingSolution/MetalProcessingSolution.csproj ./MetalProcessingSolution/
+COPY Application/Application.csproj                         ./Application/
+COPY Domain/Domain.csproj                                   ./Domain/
+COPY Infrastructure/Infrastructure.csproj                   ./Infrastructure/
+
+# Восстанавливаем зависимости для всего решения
+RUN dotnet restore MetalProcessingSolution.sln
+
+# Копируем весь остальной исходный код
+COPY . .
+
+# Публикуем только веб-проект (он подтянет остальные через ProjectReference)
+RUN dotnet publish MetalProcessingSolution/MetalProcessingSolution.csproj \
+    -c Release \
+    -o /app/publish \
+    --no-restore
+
+# ── Этап 2: образ для запуска ─────────────────────────────────
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
+WORKDIR /app
+
+COPY --from=build /app/publish .
+
+RUN mkdir -p /app/ExternalUploads
+
+ENV ASPNETCORE_URLS=http://+:${PORT:-8080}
+
+ENTRYPOINT ["dotnet", "MetalProcessingSolution.dll"]
