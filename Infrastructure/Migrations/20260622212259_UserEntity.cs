@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -26,20 +27,6 @@ namespace Infrastructure.Migrations
                     table.PrimaryKey("PK_Users", x => x.Id);
                 });
 
-            migrationBuilder.UpdateData(
-                table: "UnliquidProducts",
-                keyColumn: "Id",
-                keyValue: 1,
-                column: "Description",
-                value: "Лист горячекатаный, марка Ст3сп, размер 1500х6000.");
-
-            migrationBuilder.UpdateData(
-                table: "UnliquidProducts",
-                keyColumn: "Id",
-                keyValue: 2,
-                column: "Description",
-                value: "Остатки после производства металлоконструкций. Длина хлыстов 3м.");
-
             migrationBuilder.CreateIndex(
                 name: "IX_Users_Email",
                 table: "Users",
@@ -52,20 +39,6 @@ namespace Infrastructure.Migrations
         {
             migrationBuilder.DropTable(
                 name: "Users");
-
-            migrationBuilder.UpdateData(
-                table: "UnliquidProducts",
-                keyColumn: "Id",
-                keyValue: 1,
-                column: "Description",
-                value: "Лист горячекатаный, марка Ст3сп, размер 1500х6000. Излишки снабжения заготовительного цеха.");
-
-            migrationBuilder.UpdateData(
-                table: "UnliquidProducts",
-                keyColumn: "Id",
-                keyValue: 2,
-                column: "Description",
-                value: "Остатки после производства крупногабаритных металлоконструкций. Длина хлыстов 3м.");
         }
     }
 }
